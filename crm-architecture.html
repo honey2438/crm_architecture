@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Multi-Tenant CRM — System Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0E1428;
+    --ink-soft: #2A3147;
+    --paper: #F5F1E8;
+    --paper-soft: #EDE7D8;
+    --paper-deep: #E5DDC8;
+    --accent: #B8541F;
+    --accent-soft: #E8AC76;
+    --green: #2D5043;
+    --green-soft: #A8C4A2;
+    --blue: #2B4470;
+    --rule: rgba(14, 20, 40, 0.12);
+    --rule-strong: rgba(14, 20, 40, 0.25);
+    --muted: rgba(14, 20, 40, 0.55);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.6;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(circle at 20% 0%, rgba(184, 84, 31, 0.04) 0%, transparent 50%),
+      radial-gradient(circle at 80% 100%, rgba(45, 80, 67, 0.04) 0%, transparent 50%);
+  }
+
+  .container { max-width: 1180px; margin: 0 auto; padding: 0 40px; }
+
+  /* HEADER */
+  header.masthead { border-bottom: 1px solid var(--ink); padding: 24px 0; }
+  .masthead-inner {
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .masthead-inner .doc-meta { display: flex; gap: 32px; color: var(--muted); }
+  .masthead-inner .doc-meta span strong { color: var(--ink); margin-left: 6px; }
+
+  /* HERO */
+  .hero { padding: 80px 0 60px; border-bottom: 1px solid var(--ink); position: relative; }
+  .hero .label {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 24px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .hero .label::after { content: ''; flex: 1; height: 1px; background: var(--rule); max-width: 200px; }
+  .hero h1 {
+    font-family: 'Fraunces', serif; font-size: clamp(48px, 8vw, 96px); line-height: 0.95;
+    font-weight: 400; letter-spacing: -0.03em; margin-bottom: 24px; font-variation-settings: "opsz" 144;
+  }
+  .hero h1 em { font-style: italic; color: var(--accent); font-weight: 300; }
+  .hero .subtitle {
+    font-family: 'Fraunces', serif; font-size: 22px; line-height: 1.4; color: var(--ink-soft);
+    max-width: 680px; font-weight: 300; margin-top: 32px;
+  }
+  .hero .stat-row {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 64px;
+    border-top: 1px solid var(--rule); padding-top: 32px;
+  }
+  .stat-row .stat { border-right: 1px solid var(--rule); padding-right: 24px; }
+  .stat-row .stat:last-child { border-right: none; }
+  .stat-row .stat .num {
+    font-family: 'Fraunces', serif; font-size: 40px; font-weight: 400; line-height: 1; letter-spacing: -0.02em;
+  }
+  .stat-row .stat .lbl {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted); margin-top: 8px;
+  }
+
+  /* SECTION */
+  section { padding: 80px 0; border-bottom: 1px solid var(--rule); }
+  .section-num {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 16px;
+  }
+  h2 {
+    font-family: 'Fraunces', serif; font-size: 48px; font-weight: 400; line-height: 1.05;
+    letter-spacing: -0.02em; margin-bottom: 24px; font-variation-settings: "opsz" 100;
+  }
+  h2 em { font-style: italic; color: var(--accent); }
+  h3 { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 16px; }
+  h4 {
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--accent); margin-bottom: 12px;
+  }
+  p { margin-bottom: 16px; max-width: 760px; }
+  p.lead {
+    font-family: 'Fraunces', serif; font-size: 22px; font-weight: 300; line-height: 1.5;
+    color: var(--ink-soft); margin-bottom: 48px; max-width: 820px;
+  }
+  .subhead {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent); margin: 48px 0 20px;
+  }
+
+  /* ARCHITECTURE DIAGRAM */
+  .arch-wrap {
+    background: var(--paper-soft); border: 1px solid var(--rule-strong); padding: 40px;
+    border-radius: 4px; margin-top: 32px; overflow-x: auto;
+  }
+  .arch-wrap svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+
+  /* STEP CARDS */
+  .step {
+    display: grid; grid-template-columns: 80px 1fr 1.2fr; gap: 48px;
+    padding: 56px 0; border-bottom: 1px solid var(--rule); align-items: start;
+  }
+  .step:last-child { border-bottom: none; }
+  .step-marker {
+    font-family: 'Fraunces', serif; font-size: 56px; font-weight: 300; line-height: 1;
+    color: var(--accent); font-style: italic; font-variation-settings: "opsz" 144;
+  }
+  .step-marker .lbl {
+    display: block; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.12em; color: var(--muted); margin-top: 12px; font-style: normal; text-transform: uppercase;
+  }
+  .step-body h3 { font-size: 32px; margin-bottom: 16px; }
+  .step-body p { font-size: 15px; }
+  .step-body ul { list-style: none; margin-top: 16px; }
+  .step-body ul li {
+    padding: 8px 0; border-bottom: 1px dashed var(--rule); font-size: 14px;
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .step-body ul li:last-child { border-bottom: none; }
+  .step-body ul li::before { content: '→'; color: var(--accent); font-weight: 600; flex-shrink: 0; }
+  code {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--paper-deep);
+    padding: 2px 8px; border-radius: 3px; color: var(--ink);
+  }
+
+  /* STACK / MODULE GRID */
+  .stack-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+    border-top: 1px solid var(--ink); border-left: 1px solid var(--ink); margin-top: 32px;
+  }
+  .stack-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .stack-cell {
+    padding: 28px 22px; border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink);
+    background: var(--paper); transition: background 0.2s;
+  }
+  .stack-cell:hover { background: var(--paper-soft); }
+  .stack-cell .layer {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--accent); margin-bottom: 12px;
+  }
+  .stack-cell .tool { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; margin-bottom: 8px; line-height: 1.1; }
+  .stack-cell .desc { font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+
+  /* FLOW / API CARDS */
+  .flow-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 32px; }
+  .flow-grid.cols-1 { grid-template-columns: 1fr; }
+  .flow-card { background: white; border: 1px solid var(--rule); border-radius: 6px; padding: 24px; }
+  .flow-card h4 { margin-bottom: 16px; }
+  .flow-card .api-row {
+    display: grid; grid-template-columns: 64px 1fr; gap: 12px; padding: 8px 0;
+    border-bottom: 1px dashed var(--rule); font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; align-items: center;
+  }
+  .flow-card .api-row:last-child { border-bottom: none; }
+  .flow-card .api-row .verb {
+    background: var(--ink); color: white; padding: 3px 6px; border-radius: 3px;
+    text-align: center; font-weight: 600; font-size: 10px;
+  }
+  .flow-card .api-row .verb.get { background: var(--green); }
+  .flow-card .api-row .verb.post { background: var(--accent); }
+  .flow-card .api-row .verb.patch { background: var(--blue); }
+  .flow-card .api-row .verb.del { background: #8A2B2B; }
+  .flow-card .api-row .desc { color: var(--ink-soft); font-family: 'DM Sans', sans-serif; }
+
+  /* DETAIL / ENTITY CARDS */
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin: 32px 0; }
+  .detail-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .detail-card { border-left: 2px solid var(--accent); padding-left: 20px; }
+  .detail-card .num {
+    font-family: 'Fraunces', serif; font-style: italic; font-size: 28px; color: var(--accent);
+    line-height: 1; margin-bottom: 8px;
+  }
+  .detail-card h4 { color: var(--ink); margin-bottom: 8px; }
+  .detail-card p { font-size: 14px; }
+
+  /* TIMELINE */
+  .timeline { margin-top: 40px; position: relative; }
+  .timeline::before { content: ''; position: absolute; left: 12px; top: 12px; bottom: 12px; width: 1px; background: var(--ink); }
+  .tl-item { display: grid; grid-template-columns: 60px 130px 1fr; gap: 24px; padding: 20px 0; align-items: start; position: relative; }
+  .tl-item::before {
+    content: ''; position: absolute; left: 8px; top: 26px; width: 9px; height: 9px;
+    border-radius: 50%; background: var(--accent); border: 2px solid var(--paper);
+  }
+  .tl-item .week {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase;
+    color: var(--muted); letter-spacing: 0.08em; padding-left: 36px;
+  }
+  .tl-item .duration { font-family: 'Fraunces', serif; font-size: 16px; font-style: italic; color: var(--accent); }
+  .tl-item .task h4 {
+    font-family: 'Fraunces', serif; font-size: 18px; font-weight: 500; color: var(--ink);
+    text-transform: none; letter-spacing: 0; margin-bottom: 4px;
+  }
+  .tl-item .task p { font-size: 13px; color: var(--ink-soft); margin: 0; }
+
+  /* ENV BANNER */
+  .env-banner {
+    background: var(--ink); color: var(--paper); padding: 32px 40px; margin: 40px 0;
+    border-radius: 4px; display: grid; grid-template-columns: auto 1fr; gap: 32px; align-items: center;
+  }
+  .env-banner .icon { font-family: 'Fraunces', serif; font-style: italic; font-size: 64px; color: var(--accent-soft); line-height: 1; }
+  .env-banner h3 { color: var(--paper); font-size: 22px; margin-bottom: 8px; }
+  .env-banner p { color: rgba(245, 241, 232, 0.75); font-size: 14px; margin: 0; }
+
+  /* TABLES (fields, matrix) */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 24px; background: white; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+  .data-table th {
+    text-align: left; padding: 11px 16px; font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--muted); background: #FAFBFC; border-bottom: 1px solid var(--rule); font-weight: 600;
+  }
+  .data-table td { padding: 11px 16px; border-bottom: 1px solid #F0EDE3; vertical-align: top; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table td code { font-size: 11px; }
+  .matrix td.c { text-align: center; font-family: 'JetBrains Mono', monospace; }
+  .yes { color: var(--green); font-weight: 600; }
+  .no { color: #B91C1C; font-weight: 600; }
+  .partial { color: var(--accent); font-weight: 600; }
+
+  /* BADGES */
+  .badge {
+    display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    text-transform: uppercase; padding: 2px 7px; border-radius: 3px; letter-spacing: 0.05em;
+    font-weight: 600; vertical-align: middle;
+  }
+  .badge.editable { background: #FEF3C7; color: #92400E; }
+  .badge.admin { background: #FEE2E2; color: #991B1B; }
+  .badge.super { background: #E0E7FF; color: #3730A3; }
+  .badge.core { background: #DBEAFE; color: #1E40AF; }
+  .badge.future { background: var(--paper-deep); color: var(--muted); }
+  .badge.new { background: #DCFCE7; color: #166534; }
+
+  /* TREE (folder structure) */
+  .tree {
+    font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.7;
+    background: var(--ink); color: #D8DCE8; padding: 28px 32px; border-radius: 6px;
+    margin-top: 24px; overflow-x: auto; white-space: pre;
+  }
+  .tree .dir { color: var(--accent-soft); }
+  .tree .cm { color: #7B8299; }
+  .tree .hl { color: #fff; }
+
+  /* APP WIREFRAME (GHL-like) */
+  .app-frame {
+    background: white; border: 1px solid var(--rule-strong); border-radius: 8px; overflow: hidden;
+    box-shadow: 6px 6px 0 var(--paper-deep); display: grid; grid-template-columns: 150px 1fr;
+    margin-top: 32px; font-size: 12px;
+  }
+  .app-side { background: #16213A; color: #C3C9D9; padding: 16px 0; }
+  .app-side .brand {
+    font-family: 'Fraunces', serif; color: #fff; font-size: 15px; padding: 0 16px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 10px;
+  }
+  .app-side .nav { padding: 7px 16px; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+  .app-side .nav.active { background: rgba(184,84,31,0.85); color: #fff; font-weight: 600; }
+  .app-side .nav .dot { width: 6px; height: 6px; border-radius: 2px; background: rgba(255,255,255,0.4); }
+  .app-side .nav.active .dot { background: #fff; }
+  .app-main { background: #fff; }
+  .app-bar {
+    padding: 14px 20px; border-bottom: 1px solid var(--rule); display: flex;
+    justify-content: space-between; align-items: center; background: #FAFBFC;
+  }
+  .app-bar .ttl { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 500; }
+  .app-bar .btn { background: var(--accent); color: #fff; padding: 6px 12px; border-radius: 5px; font-size: 11px; font-weight: 600; }
+  .app-body { padding: 18px 20px; }
+  .wf-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .wf-table th { text-align: left; padding: 7px 10px; color: var(--muted); border-bottom: 1px solid var(--rule); font-size: 10px; text-transform: uppercase; }
+  .wf-table td { padding: 8px 10px; border-bottom: 1px solid #F3F4F6; }
+  .wf-chip { display:inline-block; background: #DBEAFE; color:#1E40AF; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+  .wf-pipe { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .wf-stage { background: var(--paper-soft); border: 1px solid var(--rule); border-radius: 5px; padding: 10px; }
+  .wf-stage .h { font-size: 10px; text-transform: uppercase; font-weight: 700; color: var(--muted); letter-spacing: 0.04em; }
+  .wf-stage .n { font-family: 'Fraunces', serif; font-size: 18px; }
+  .wf-card { background: #fff; border: 1px solid var(--rule); border-radius: 5px; padding: 8px; margin-top: 8px; font-size: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+  .wf-card .nm { font-weight: 600; margin-bottom: 4px; }
+  .wf-dd { display:inline-flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--rule); border-radius:5px; padding:5px 10px; font-size:11px; color: var(--ink-soft); }
+
+  /* FOOTER */
+  footer { padding: 60px 0 80px; border-top: 1px solid var(--ink); margin-top: 40px; }
+  .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 40px; }
+  .footer-grid p { font-size: 13px; color: var(--ink-soft); }
+  footer h4 { color: var(--ink); margin-bottom: 16px; }
+  footer ul { list-style: none; }
+  footer ul li { font-size: 13px; padding: 4px 0; color: var(--ink-soft); }
+
+  @media (max-width: 900px) {
+    .container { padding: 0 24px; }
+    .hero h1 { font-size: 56px; }
+    h2 { font-size: 36px; }
+    .hero .stat-row { grid-template-columns: repeat(2, 1fr); }
+    .step { grid-template-columns: 1fr; gap: 24px; }
+    .stack-grid, .stack-grid.cols-3 { grid-template-columns: repeat(2, 1fr); }
+    .flow-grid, .detail-grid, .detail-grid.cols-3, .footer-grid { grid-template-columns: 1fr; }
+    .app-frame { grid-template-columns: 1fr; }
+    .app-side { display: none; }
+    .wf-pipe { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="container masthead-inner">
+    <div>MULTI-TENANT CRM / SYSTEM ARCHITECTURE</div>
+    <div class="doc-meta">
+      <span>VERSION <strong>01</strong></span>
+      <span>BLUEPRINT</span>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="container">
+    <div class="label">System Architecture · Agency CRM Platform</div>
+    <h1>A <em>modular</em><br/>multi-tenant CRM,<br/>editable to the core.</h1>
+    <p class="subtitle">A GoHighLevel-style platform with a super-admin control plane on top of isolated agency accounts. Contacts and opportunities first — but every page, role, field, and module is designed to be appended to without touching the rest.</p>
+
+    <div class="stat-row">
+      <div class="stat"><div class="num">3</div><div class="lbl">Role tiers</div></div>
+      <div class="stat"><div class="num">2</div><div class="lbl">Core pages (now)</div></div>
+      <div class="stat"><div class="num">11</div><div class="lbl">Backend modules</div></div>
+      <div class="stat"><div class="num">100%</div><div class="lbl">Super-admin editable</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- §01 ARCHITECTURE -->
+<section>
+  <div class="container">
+    <div class="section-num">§ 01 — System Architecture</div>
+    <h2>Two planes, <em>one platform.</em></h2>
+    <p class="lead">A <strong>control plane</strong> where the super admin provisions accounts, defines roles, and toggles page access — sitting above a <strong>tenant plane</strong> where each agency's admins and employees work inside their own isolated workspace. A Next.js frontend talks to a modular backend; every domain is its own module behind a shared gateway, and all tenant data is scoped by <code>account_id</code>.</p>
+
+    <div class="arch-wrap">
+      <svg viewBox="0 0 1100 780" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Full system architecture diagram">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="#0E1428"/>
+          </marker>
+        </defs>
+
+        <!-- CLIENT LAYER -->
+        <text x="40" y="30" font-family="JetBrains Mono" font-size="10" fill="#B8541F" letter-spacing="1">CLIENT LAYER — NEXT.JS (APP ROUTER)</text>
+        <rect x="40" y="44" width="490" height="92" rx="6" fill="#FFF" stroke="#0E1428"/>
+        <text x="285" y="74" text-anchor="middle" font-family="Fraunces, serif" font-size="17" font-weight="500" fill="#0E1428">Super Admin Console</text>
+        <text x="285" y="96" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#5A5F75">Accounts · Account switcher · Roles &amp; page access</text>
+        <text x="285" y="114" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#5A5F75">Custom fields · Pipelines config · Feature flags</text>
+
+        <rect x="570" y="44" width="490" height="92" rx="6" fill="#FFF" stroke="#0E1428"/>
+        <text x="815" y="74" text-anchor="middle" font-family="Fraunces, serif" font-size="17" font-weight="500" fill="#0E1428">Tenant App (Admin / Employee)</text>
+        <text x="815" y="96" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#5A5F75">Contacts · Opportunities · Pipelines</text>
+        <text x="815" y="114" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#5A5F75">Employee management (admin-only)</text>
+
+        <line x1="285" y1="136" x2="285" y2="186" stroke="#0E1428" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <line x1="815" y1="136" x2="815" y2="186" stroke="#0E1428" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <text x="560" y="170" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#5A5F75">HTTPS · JWT (account_id + role claims)</text>
+
+        <!-- GATEWAY -->
+        <rect x="40" y="186" width="1020" height="74" rx="6" fill="#2B4470" stroke="#2B4470"/>
+        <text x="60" y="210" font-family="JetBrains Mono" font-size="10" fill="#A8C4E0" letter-spacing="1">API GATEWAY</text>
+        <text x="190" y="232" font-family="DM Sans" font-size="12" fill="#FFF">Auth</text>
+        <text x="360" y="232" font-family="DM Sans" font-size="12" fill="#FFF">Tenant-scope middleware</text>
+        <text x="620" y="232" font-family="DM Sans" font-size="12" fill="#FFF">RBAC / page-access guard</text>
+        <text x="900" y="232" font-family="DM Sans" font-size="12" fill="#FFF">Audit log</text>
+        <text x="190" y="248" font-family="DM Sans" font-size="10" fill="#A8C4E0">verify session</text>
+        <text x="360" y="248" font-family="DM Sans" font-size="10" fill="#A8C4E0">inject account_id</text>
+        <text x="620" y="248" font-family="DM Sans" font-size="10" fill="#A8C4E0">resolve effective permissions</text>
+        <text x="900" y="248" font-family="DM Sans" font-size="10" fill="#A8C4E0">who did what</text>
+
+        <line x1="550" y1="260" x2="550" y2="304" stroke="#0E1428" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- DOMAIN MODULES -->
+        <rect x="40" y="304" width="1020" height="252" rx="8" fill="#EDE7D8" stroke="#0E1428" stroke-dasharray="4 3"/>
+        <text x="60" y="328" font-family="JetBrains Mono" font-size="10" fill="#B8541F" letter-spacing="1">DOMAIN MODULES — MODULAR MONOLITH (each independently extendable)</text>
+
+        <!-- platform modules -->
+        <rect x="62" y="344" width="218" height="62" rx="5" fill="#FFF" stroke="#0E1428"/>
+        <text x="171" y="372" text-anchor="middle" font-family="Fraunces, serif" font-size="15" font-weight="500" fill="#0E1428">Accounts</text>
+        <text x="171" y="390" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#5A5F75">tenants · switching</text>
+
+        <rect x="296" y="344" width="218" height="62" rx="5" fill="#FFF" stroke="#0E1428"/>
+        <text x="405" y="372" text-anchor="middle" font-family="Fraunces, serif" font-size="15" font-weight="500" fill="#0E1428">Users</text>
+        <text x="405" y="390" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#5A5F75">accounts &amp; staff</text>
+
+        <rect x="530" y="344" width="218" height="62" rx="5" fill="#FFF" stroke="#0E1428"/>
+        <text x="639" y="372" text-anchor="middle" font-family="Fraunces, serif" font-size="15" font-weight="500" fill="#0E1428">RBAC</text>
+        <text x="639" y="390" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#5A5F75">roles · page access</text>
+
+        <rect x="764" y="344" width="276" height="62" rx="5" fill="#FFF" stroke="#0E1428"/>
+        <text x="902" y="372" text-anchor="middle" font-family="Fraunces, serif" font-size="15" font-weight="500" fill="#0E1428">Page / Feature Registry</text>
+        <text x="902" y="390" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#5A5F75">defines what pages exist + visibility</text>
+
+        <!-- tenant business modules -->
+        <rect x="62" y="418" width="218" height="62" rx="5" fill="#FFF" stroke="#0E1428"/>
+        <text x="171" y="446" text-anchor="middle" font-family="Fraunces, serif" font-size="15" font-weight="500" fill="#0E1428">Contacts</text>
+        <text x="171" y="464" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#5A5F75">manual form entry</text>
+
+        <rect x="296" y="418" width="218" height="62" rx="5" fill="#FFF" stroke="#0E1428"/>
+        <text x="405" y="446" text-anchor="middle" font-family="Fraunces, serif" font-size="15" font-weight="500" fill="#0E1428">Opportunities</text>
+        <text x="405" y="464" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#5A5F75">deals on pipelines</text>
+
+        <rect x="530" y="418" width="218" height="62" rx="5" fill="#FFF" stroke="#0E1428"/>
+        <text x="639" y="446" text-anchor="middle" font-family="Fraunces, serif" font-size="15" font-weight="500" fill="#0E1428">Pipelines</text>
+        <text x="639" y="464" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#5A5F75">stages · dropdown</text>
+
+        <rect x="764" y="418" width="276" height="62" rx="5" fill="#FFF" stroke="#0E1428"/>
+        <text x="902" y="446" text-anchor="middle" font-family="Fraunces, serif" font-size="15" font-weight="500" fill="#0E1428">Custom Fields</text>
+        <text x="902" y="464" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#5A5F75">dynamic schema per object</text>
+
+        <!-- supporting modules -->
+        <rect x="62" y="492" width="218" height="46" rx="5" fill="#F5F1E8" stroke="#0E1428"/>
+        <text x="171" y="520" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#0E1428">Tags</text>
+        <rect x="296" y="492" width="218" height="46" rx="5" fill="#F5F1E8" stroke="#0E1428"/>
+        <text x="405" y="520" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#0E1428">Audit</text>
+        <rect x="530" y="492" width="218" height="46" rx="5" fill="#F5F1E8" stroke="#0E1428"/>
+        <text x="639" y="520" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#0E1428">Feature Flags</text>
+        <rect x="764" y="492" width="276" height="46" rx="5" fill="#F5F1E8" stroke="#0E1428"/>
+        <text x="902" y="520" text-anchor="middle" font-family="DM Sans" font-size="12" fill="#0E1428">Notifications &amp; future modules &#8230;</text>
+
+        <line x1="550" y1="556" x2="550" y2="600" stroke="#0E1428" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- DATA LAYER -->
+        <text x="40" y="592" font-family="JetBrains Mono" font-size="10" fill="#B8541F" letter-spacing="1">DATA LAYER</text>
+        <rect x="40" y="600" width="490" height="92" rx="6" fill="#2D5043" stroke="#2D5043"/>
+        <text x="285" y="632" text-anchor="middle" font-family="Fraunces, serif" font-size="17" font-weight="500" fill="#FFF">PostgreSQL</text>
+        <text x="285" y="654" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#A8C4A2">All tables carry account_id · tenant isolation</text>
+        <text x="285" y="672" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#A8C4A2">JSONB for custom-field values</text>
+
+        <rect x="546" y="600" width="248" height="92" rx="6" fill="#FFF" stroke="#0E1428"/>
+        <text x="670" y="640" text-anchor="middle" font-family="Fraunces, serif" font-size="16" font-weight="500" fill="#0E1428">Redis</text>
+        <text x="670" y="662" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#5A5F75">sessions · permission cache</text>
+
+        <rect x="810" y="600" width="250" height="92" rx="6" fill="#FFF" stroke="#0E1428"/>
+        <text x="935" y="640" text-anchor="middle" font-family="Fraunces, serif" font-size="16" font-weight="500" fill="#0E1428">Object Storage</text>
+        <text x="935" y="662" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#5A5F75">contact images · imports</text>
+
+        <text x="550" y="730" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#5A5F75">SUPER ADMIN BYPASSES TENANT SCOPE · ALL OTHER ROLES ARE LOCKED TO THEIR OWN account_id</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- §02 ROLES & ACCESS -->
+<section>
+  <div class="container">
+    <div class="section-num">§ 02 — Roles &amp; Access Model</div>
+    <h2>Who can <em>touch</em> what.</h2>
+    <p class="lead">Three tiers. The super admin owns the platform and every account on it. Inside an account, an admin runs the workspace including its staff; an employee does the same work minus the people-management page. Crucially, the page-to-role mapping is <strong>data, not code</strong> — the super admin edits it from the console.</p>
+
+    <div class="detail-grid cols-3">
+      <div class="detail-card">
+        <div class="num">i.</div>
+        <h4>Super Admin <span class="badge super">platform</span></h4>
+        <p>Lives above all accounts. Creates and configures accounts, switches into any account, creates the first admin per account, and edits roles, pages, fields, and feature flags globally. Not bound by <code>account_id</code>.</p>
+      </div>
+      <div class="detail-card">
+        <div class="num">ii.</div>
+        <h4>Admin <span class="badge admin">account</span></h4>
+        <p>Full access to every page in their account <em>including</em> Employee Management, where they create and manage employee accounts. Scoped strictly to their own <code>account_id</code>.</p>
+      </div>
+      <div class="detail-card">
+        <div class="num">iii.</div>
+        <h4>Employee <span class="badge core">account</span></h4>
+        <p>Identical to the admin in every page <em>except</em> Employee Management, which is hidden and route-guarded. Same tenant scope.</p>
+      </div>
+    </div>
+
+    <div class="subhead">Page-access matrix — default values, all rows editable by super admin <span class="badge editable">editable</span></div>
+    <table class="data-table matrix">
+      <thead>
+        <tr><th>Page / Capability</th><th class="c">Super Admin</th><th class="c">Account Admin</th><th class="c">Employee</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Account management (create / switch accounts)</td><td class="c yes">✓</td><td class="c no">✕</td><td class="c no">✕</td></tr>
+        <tr><td>Roles &amp; page-access editor</td><td class="c yes">✓</td><td class="c no">✕</td><td class="c no">✕</td></tr>
+        <tr><td>Custom fields &amp; pipeline templates</td><td class="c yes">✓</td><td class="c partial">○</td><td class="c no">✕</td></tr>
+        <tr><td>Employee management</td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c no">✕</td></tr>
+        <tr><td>Contacts</td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+        <tr><td>Opportunities &amp; pipelines</td><td class="c yes">✓</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:16px; font-size:13px; color:var(--muted);"><span class="yes">✓</span> full &nbsp; <span class="partial">○</span> configurable default (super admin decides per account) &nbsp; <span class="no">✕</span> hidden &amp; route-guarded</p>
+
+    <div class="env-banner">
+      <div class="icon">✦</div>
+      <div>
+        <h3>Access is resolved, never hardcoded.</h3>
+        <p>On login the gateway computes an <em>effective permission set</em> = role defaults + per-account overrides + feature flags, then caches it in Redis. The frontend reads the same set to show/hide nav items, and the backend enforces it on every request. Changing a checkbox in the super admin console is all it takes to move a page between roles.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §03 DATA MODEL -->
+<section>
+  <div class="container">
+    <div class="section-num">§ 03 — Data Model</div>
+    <h2>What lives <em>where.</em></h2>
+    <p class="lead">A tenancy spine (<code>Account → User</code>) with an RBAC layer beside it, and the business objects (<code>Contact</code>, <code>Pipeline → Stage → Opportunity</code>) hanging off each account. Every business row carries <code>account_id</code>; dynamic data lives in custom-field definitions plus JSONB values so new fields never require a migration.</p>
+
+    <div class="subhead">Core entities</div>
+    <div class="detail-grid">
+      <div class="detail-card">
+        <div class="num">01</div>
+        <h4>Account</h4>
+        <p>A tenant / agency workspace. Created by the super admin. Owns all business data and its own settings, branding, and feature flags. Type may be extended later (agency, sub-account, etc.).</p>
+      </div>
+      <div class="detail-card">
+        <div class="num">02</div>
+        <h4>User</h4>
+        <p>A login. Has a <code>role</code> (super_admin / admin / employee) and — for non-super-admins — an <code>account_id</code>. Super admins have a null account and can act inside any account via switching.</p>
+      </div>
+      <div class="detail-card">
+        <div class="num">03</div>
+        <h4>Role &amp; PagePermission</h4>
+        <p>Role defaults plus an editable join of <code>{account, role, page, can_view/edit}</code>. This table is what the super admin edits to move pages between roles per account.</p>
+      </div>
+      <div class="detail-card">
+        <div class="num">04</div>
+        <h4>Contact</h4>
+        <p>A person/business created manually via the form: name, emails, phones, business name, tags, contact type, timezone, channels/DND. Standard fields + custom-field values.</p>
+      </div>
+      <div class="detail-card">
+        <div class="num">05</div>
+        <h4>Pipeline &amp; Stage</h4>
+        <p>A named pipeline with ordered stages (New Lead, Contacted, Qualified, Proposal, Closed&#8230;). Pipelines are selectable from the dropdown on the opportunities page. Stages carry order + display config.</p>
+      </div>
+      <div class="detail-card">
+        <div class="num">06</div>
+        <h4>Opportunity</h4>
+        <p>A deal linked to a contact, sitting on one stage of one pipeline: name, value, status (open/won/lost), owner, followers, source, business name, tags.</p>
+      </div>
+      <div class="detail-card">
+        <div class="num">07</div>
+        <h4>CustomFieldDefinition</h4>
+        <p>Per object (Contact / Opportunity): key, label, type, folder, options. Defines the dynamic schema; values stored in JSONB on the record. Standard fields (state, city, website&#8230;) modelled the same way.</p>
+      </div>
+      <div class="detail-card">
+        <div class="num">08</div>
+        <h4>Tag &amp; AuditLog</h4>
+        <p>Reusable labels scoped to an account, plus an append-only audit trail of who changed what — the backbone for traceable, editable configuration.</p>
+      </div>
+    </div>
+
+    <div class="subhead">Selected fields — Contact (mirrors the reference form)</div>
+    <table class="data-table">
+      <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><code>first_name</code></td><td>string</td><td>Required (form validation)</td></tr>
+        <tr><td><code>last_name</code></td><td>string</td><td>Optional</td></tr>
+        <tr><td><code>emails[]</code></td><td>array</td><td>One primary, "+ Add email" for more</td></tr>
+        <tr><td><code>phones[]</code></td><td>array</td><td>Country code + number, "+ Add phone"</td></tr>
+        <tr><td><code>contact_type</code></td><td>enum</td><td>Selectable; types are configurable</td></tr>
+        <tr><td><code>timezone</code></td><td>string</td><td>Dropdown</td></tr>
+        <tr><td><code>tags[]</code></td><td>array</td><td>e.g. follow-up, warm lead</td></tr>
+        <tr><td><code>dnd / channels</code></td><td>object</td><td>DND all, or per-channel (email, SMS, calls)</td></tr>
+        <tr><td><code>custom_values</code></td><td>jsonb</td><td>Everything defined in Custom Fields</td></tr>
+        <tr><td><code>account_id</code></td><td>fk</td><td>Tenant scope — on every row</td></tr>
+      </tbody>
+    </table>
+
+    <div class="subhead">Selected fields — Opportunity (mirrors "Add new opportunity")</div>
+    <table class="data-table">
+      <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><code>name</code></td><td>string</td><td>Required</td></tr>
+        <tr><td><code>contact_id</code></td><td>fk</td><td>Primary contact (name / email / phone)</td></tr>
+        <tr><td><code>pipeline_id</code> / <code>stage_id</code></td><td>fk</td><td>Which pipeline + stage</td></tr>
+        <tr><td><code>status</code></td><td>enum</td><td>open / won / lost / abandoned</td></tr>
+        <tr><td><code>value</code></td><td>money</td><td>Deal value (currency per account)</td></tr>
+        <tr><td><code>owner_id</code> / <code>followers[]</code></td><td>fk</td><td>Unassigned by default</td></tr>
+        <tr><td><code>business_name · source · tags[]</code></td><td>mixed</td><td>As in the form</td></tr>
+        <tr><td><code>account_id</code></td><td>fk</td><td>Tenant scope</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- §04 BACKEND MODULES -->
+<section>
+  <div class="container">
+    <div class="section-num">§ 04 — Backend Module Structure (Apps)</div>
+    <h2>Many modules, <em>one boundary.</em></h2>
+    <p class="lead">A modular monolith: a single deployable, internally split into self-contained modules ("apps") that each own their routes, services, models, and validation. Modules talk through interfaces, not each other's internals — so a new module is <em>added</em>, never stitched in. NestJS (TypeScript) pairs naturally with the Next.js frontend, but the structure maps cleanly onto Django apps or FastAPI routers too.</p>
+
+    <div class="stack-grid">
+      <div class="stack-cell"><div class="layer">Platform</div><div class="tool">auth</div><div class="desc">Login, sessions/JWT, password &amp; token handling. Issues claims: user, role, account_id.</div></div>
+      <div class="stack-cell"><div class="layer">Platform</div><div class="tool">accounts</div><div class="desc">Account (tenant) CRUD, account types, and the switch-account capability for super admins.</div></div>
+      <div class="stack-cell"><div class="layer">Platform</div><div class="tool">users</div><div class="desc">User CRUD: super-admin creating accounts' admins, admins creating employees.</div></div>
+      <div class="stack-cell"><div class="layer">Platform</div><div class="tool">rbac</div><div class="desc">Roles, page permissions, effective-permission resolver, the editable access matrix.</div></div>
+
+      <div class="stack-cell"><div class="layer">Platform</div><div class="tool">page-registry</div><div class="desc">Source of truth for which pages/features exist; lets the super admin register new ones.</div></div>
+      <div class="stack-cell"><div class="layer">Business</div><div class="tool">contacts</div><div class="desc">Contact CRUD, manual-form validation, smart lists, import/export, manage-fields.</div></div>
+      <div class="stack-cell"><div class="layer">Business</div><div class="tool">opportunities</div><div class="desc">Deal CRUD, stage moves, kanban &amp; list views, owners/followers.</div></div>
+      <div class="stack-cell"><div class="layer">Business</div><div class="tool">pipelines</div><div class="desc">Pipelines + ordered stages, display colours, the dropdown source.</div></div>
+
+      <div class="stack-cell"><div class="layer">Shared</div><div class="tool">custom-fields</div><div class="desc">Dynamic field definitions &amp; JSONB values for any object — "every small thing editable."</div></div>
+      <div class="stack-cell"><div class="layer">Shared</div><div class="tool">tags</div><div class="desc">Reusable, account-scoped labels for contacts and opportunities.</div></div>
+      <div class="stack-cell"><div class="layer">Shared</div><div class="tool">audit + flags</div><div class="desc">Append-only change log and per-account feature flags that gate modules/pages.</div></div>
+      <div class="stack-cell"><div class="layer">Shared</div><div class="tool">core</div><div class="desc">Base entity (id, account_id, timestamps), tenant middleware, guards, error model, utilities — the DRY backbone every module imports.</div></div>
+    </div>
+
+    <div class="subhead">Backend folder layout (structure only)</div>
+    <pre class="tree"><span class="cm"># modular monolith — each module is self-contained and pluggable</span>
+src/
+├── <span class="dir">core/</span>                  <span class="cm"># base entity, tenant middleware, RBAC guard, errors, config</span>
+├── <span class="dir">modules/</span>
+│   ├── <span class="dir">auth/</span>             <span class="cm"># controller · service · strategy · dto</span>
+│   ├── <span class="dir">accounts/</span>         <span class="cm"># + account-switch use case</span>
+│   ├── <span class="dir">users/</span>
+│   ├── <span class="dir">rbac/</span>             <span class="cm"># roles · page-permissions · effective-permission resolver</span>
+│   ├── <span class="dir">page-registry/</span>    <span class="cm"># register / describe pages &amp; features</span>
+│   ├── <span class="dir">contacts/</span>
+│   ├── <span class="dir">opportunities/</span>
+│   ├── <span class="dir">pipelines/</span>
+│   ├── <span class="dir">custom-fields/</span>
+│   ├── <span class="dir">tags/</span>
+│   ├── <span class="dir">audit/</span>
+│   └── <span class="dir">feature-flags/</span>
+├── <span class="hl">app.module</span>            <span class="cm"># registers modules — add a line, ship a feature</span>
+└── <span class="hl">main</span>                  <span class="cm"># bootstrap + global middleware/guards</span>
+
+<span class="cm"># each module, same shape (DRY, predictable):</span>
+modules/contacts/
+├── contacts.controller     <span class="cm"># routes only</span>
+├── contacts.service        <span class="cm"># business logic</span>
+├── contacts.repository     <span class="cm"># data access, always account-scoped</span>
+├── contacts.model          <span class="cm"># entity / schema</span>
+├── dto/                     <span class="cm"># request validation</span>
+└── contacts.module         <span class="cm"># wiring</span></pre>
+
+    <div class="env-banner">
+      <div class="icon">⌬</div>
+      <div>
+        <h3>Adding functionality = adding a folder.</h3>
+        <p>A new capability (say <code>tasks</code> or <code>calendars</code>) is a new module folder of the same shape, one registration line in <code>app.module</code>, and a page entry in <code>page-registry</code>. Nothing existing is edited. Tenant scoping, RBAC, and audit are inherited from <code>core</code> for free.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §05 API SURFACE -->
+<section>
+  <div class="container">
+    <div class="section-num">§ 05 — API Surface</div>
+    <h2>The endpoints, <em>by module.</em></h2>
+    <p class="lead">Every route is namespaced by module. Tenant-scoped routes auto-filter by the caller's <code>account_id</code>; super-admin-only routes carry an extra guard. Listed as contracts, not implementations.</p>
+
+    <div class="flow-grid">
+      <div class="flow-card">
+        <h4>Platform — super admin only</h4>
+        <div class="api-row"><div class="verb post">POST</div><div><div>/accounts</div><div class="desc">Create a new account (tenant)</div></div></div>
+        <div class="api-row"><div class="verb get">GET</div><div><div>/accounts</div><div class="desc">List all accounts</div></div></div>
+        <div class="api-row"><div class="verb post">POST</div><div><div>/accounts/:id/switch</div><div class="desc">Issue a scoped session into an account</div></div></div>
+        <div class="api-row"><div class="verb post">POST</div><div><div>/accounts/:id/users</div><div class="desc">Create the account's first admin</div></div></div>
+        <div class="api-row"><div class="verb patch">PATCH</div><div><div>/rbac/page-access</div><div class="desc">Edit which role sees which page</div></div></div>
+        <div class="api-row"><div class="verb post">POST</div><div><div>/page-registry</div><div class="desc">Register a brand-new page/feature</div></div></div>
+      </div>
+
+      <div class="flow-card">
+        <h4>Account — admin &amp; employee</h4>
+        <div class="api-row"><div class="verb get">GET</div><div><div>/me/permissions</div><div class="desc">Effective permission set for nav + guards</div></div></div>
+        <div class="api-row"><div class="verb post">POST</div><div><div>/contacts</div><div class="desc">Create a contact (manual form)</div></div></div>
+        <div class="api-row"><div class="verb get">GET</div><div><div>/contacts</div><div class="desc">List / search / smart lists</div></div></div>
+        <div class="api-row"><div class="verb post">POST</div><div><div>/opportunities</div><div class="desc">Create a deal on a pipeline stage</div></div></div>
+        <div class="api-row"><div class="verb patch">PATCH</div><div><div>/opportunities/:id/stage</div><div class="desc">Move a deal between stages</div></div></div>
+        <div class="api-row"><div class="verb get">GET</div><div><div>/pipelines</div><div class="desc">Pipelines for the dropdown</div></div></div>
+      </div>
+
+      <div class="flow-card">
+        <h4>Admin-only (within account)</h4>
+        <div class="api-row"><div class="verb post">POST</div><div><div>/users (employees)</div><div class="desc">Create an employee — employee-management page</div></div></div>
+        <div class="api-row"><div class="verb patch">PATCH</div><div><div>/users/:id</div><div class="desc">Edit / deactivate staff</div></div></div>
+        <div class="api-row"><div class="verb del">DEL</div><div><div>/users/:id</div><div class="desc">Remove staff access</div></div></div>
+      </div>
+
+      <div class="flow-card">
+        <h4>Shared — config objects</h4>
+        <div class="api-row"><div class="verb post">POST</div><div><div>/pipelines</div><div class="desc">Create pipeline + stages</div></div></div>
+        <div class="api-row"><div class="verb post">POST</div><div><div>/custom-fields</div><div class="desc">Define a new field on any object</div></div></div>
+        <div class="api-row"><div class="verb get">GET</div><div><div>/custom-fields?object=contact</div><div class="desc">Schema that drives manage-fields</div></div></div>
+        <div class="api-row"><div class="verb post">POST</div><div><div>/tags</div><div class="desc">Create reusable tag</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §06 FRONTEND -->
+<section>
+  <div class="container">
+    <div class="section-num">§ 06 — Frontend Architecture</div>
+    <h2>Next.js, <em>kept DRY.</em></h2>
+    <p class="lead">App Router with route groups for each plane. A small set of generic, reusable components (table, form-builder, drawer, kanban) renders every page — Contacts and Opportunities are configurations of the same primitives, not bespoke screens. Navigation and routes are driven by the permission set, so visibility tracks the super admin's edits automatically.</p>
+
+    <div class="subhead">Frontend folder layout (structure only)</div>
+    <pre class="tree">app/
+├── <span class="dir">(auth)/</span>login
+├── <span class="dir">(super-admin)/</span>        <span class="cm"># control plane — guarded to super_admin</span>
+│   ├── accounts/             <span class="cm"># list · create · switch</span>
+│   ├── access/               <span class="cm"># role &amp; page-access editor</span>
+│   ├── custom-fields/
+│   └── pipelines-config/
+├── <span class="dir">(tenant)/</span>             <span class="cm"># the workspace — admin + employee</span>
+│   ├── contacts/
+│   ├── opportunities/
+│   └── employees/            <span class="cm"># admin-only, hidden for employees</span>
+└── layout · middleware       <span class="cm"># auth + permission gate</span>
+
+components/                   <span class="cm"># DRY, reused everywhere</span>
+├── <span class="hl">DataTable</span>             <span class="cm"># contacts list, smart lists, opp list view</span>
+├── <span class="hl">FormBuilder</span>           <span class="cm"># renders forms from field definitions</span>
+├── <span class="hl">RecordDrawer</span>          <span class="cm"># the "Add Contact" / record side-panel</span>
+├── <span class="hl">KanbanBoard</span>           <span class="cm"># pipeline stages + deal cards</span>
+├── <span class="hl">PipelineSelect</span>        <span class="cm"># the pipeline dropdown</span>
+├── <span class="hl">PermissionGuard</span>       <span class="cm"># show/route-guard by capability</span>
+└── <span class="hl">Nav</span>                   <span class="cm"># built from /me/permissions</span>
+
+lib/
+├── api/                      <span class="cm"># typed client per module</span>
+├── permissions/              <span class="cm"># effective-permission context + hooks</span>
+└── field-registry/           <span class="cm"># maps field types → input components</span></pre>
+
+    <div class="detail-grid">
+      <div class="detail-card">
+        <div class="num">DRY</div>
+        <h4>One table, one form, many pages</h4>
+        <p>Contacts and Opportunities both render <code>DataTable</code> + <code>RecordDrawer</code>; only their column &amp; field config differs. New fields appear automatically because <code>FormBuilder</code> reads custom-field definitions.</p>
+      </div>
+      <div class="detail-card">
+        <div class="num">Gate</div>
+        <h4>Permission-driven UI</h4>
+        <p>The nav and route guards consume <code>/me/permissions</code>. When the super admin moves a page between roles, the menu and access change with no redeploy. The Employee page simply isn't rendered or routable for employees.</p>
+      </div>
+    </div>
+
+    <div class="subhead">Reference screens — Contacts &amp; Opportunities (GoHighLevel parity)</div>
+    <div class="app-frame">
+      <div class="app-side">
+        <div class="brand">Agency CRM</div>
+        <div class="nav active"><span class="dot"></span> Contacts</div>
+        <div class="nav"><span class="dot"></span> Opportunities</div>
+        <div class="nav"><span class="dot"></span> Employees <span class="badge admin" style="margin-left:4px;">admin</span></div>
+      </div>
+      <div class="app-main">
+        <div class="app-bar"><div class="ttl">Contacts · 5</div><div class="btn">+ Add Contact</div></div>
+        <div class="app-body">
+          <table class="wf-table">
+            <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Tags</th></tr></thead>
+            <tbody>
+              <tr><td>Casey M.</td><td>+1 654&#8230;</td><td>—</td><td><span class="wf-chip">follow-up</span></td></tr>
+              <tr><td>Taylor R.</td><td>+1 786&#8230;</td><td>—</td><td><span class="wf-chip">follow-up</span></td></tr>
+              <tr><td>Riley B.</td><td>+1 314&#8230;</td><td>riley@&#8230;</td><td><span class="wf-chip">warm lead</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="app-frame">
+      <div class="app-side">
+        <div class="brand">Agency CRM</div>
+        <div class="nav"><span class="dot"></span> Contacts</div>
+        <div class="nav active"><span class="dot"></span> Opportunities</div>
+        <div class="nav"><span class="dot"></span> Employees <span class="badge admin" style="margin-left:4px;">admin</span></div>
+      </div>
+      <div class="app-main">
+        <div class="app-bar">
+          <div class="wf-dd">Marketing Pipeline ▾</div>
+          <div class="btn">+ Add opportunity</div>
+        </div>
+        <div class="app-body">
+          <div class="wf-pipe">
+            <div class="wf-stage"><div class="h">New Lead</div><div class="n">1</div><div class="wf-card"><div class="nm">Deal · Taylor R.</div>₹4,549</div></div>
+            <div class="wf-stage"><div class="h">Contacted</div><div class="n">0</div></div>
+            <div class="wf-stage"><div class="h">Qualified</div><div class="n">1</div><div class="wf-card"><div class="nm">Deal · Casey M.</div>₹883</div></div>
+            <div class="wf-stage"><div class="h">Proposal</div><div class="n">0</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §07 CORE FLOWS -->
+<section>
+  <div class="container">
+    <div class="section-num">§ 07 — Core Flows</div>
+    <h2>How it <em>moves.</em></h2>
+    <p class="lead">The end-to-end journeys, from the super admin provisioning an account down to an employee dragging a deal across a pipeline.</p>
+
+    <div class="step">
+      <div class="step-marker">01<span class="lbl">Provision</span></div>
+      <div class="step-body">
+        <h3>Super admin creates an account</h3>
+        <p>From the console, the super admin creates a new account (tenant) and its first admin user.</p>
+      </div>
+      <div class="step-body">
+        <ul>
+          <li><code>POST /accounts</code> creates the tenant + default pipeline/fields</li>
+          <li><code>POST /accounts/:id/users</code> creates the admin (role = admin)</li>
+          <li>Default page-access rows are seeded; super admin can tweak them</li>
+          <li>Admin receives credentials and logs in scoped to that account</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker">02<span class="lbl">Switch</span></div>
+      <div class="step-body">
+        <h3>Super admin switches accounts</h3>
+        <p>To work inside any tenant, the super admin "enters" it — getting a session scoped to that <code>account_id</code> while retaining elevated rights.</p>
+      </div>
+      <div class="step-body">
+        <ul>
+          <li><code>POST /accounts/:id/switch</code> returns a scoped session/JWT</li>
+          <li>All subsequent reads/writes filter by that account</li>
+          <li>Action is recorded in the audit log</li>
+          <li>Switching back returns to the platform-level context</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker">03<span class="lbl">Staff</span></div>
+      <div class="step-body">
+        <h3>Admin creates an employee</h3>
+        <p>On the admin-only Employee Management page, the admin adds staff who then share every page except this one.</p>
+      </div>
+      <div class="step-body">
+        <ul>
+          <li><code>POST /users</code> with role = employee, same <code>account_id</code></li>
+          <li>Employee logs in; nav is built from their permission set</li>
+          <li>Employee Management is absent and route-guarded for them</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker">04<span class="lbl">Contact</span></div>
+      <div class="step-body">
+        <h3>Create a contact (manual form)</h3>
+        <p>The "Add Contact" drawer collects the standard fields plus any custom fields; first name is required.</p>
+      </div>
+      <div class="step-body">
+        <ul>
+          <li>Drawer rendered by <code>FormBuilder</code> from field definitions</li>
+          <li>Client + server validation (required first name, email/phone format)</li>
+          <li><code>POST /contacts</code> saves with <code>account_id</code> + custom values</li>
+          <li>List/Smart List refreshes via the shared <code>DataTable</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker">05<span class="lbl">Pipeline</span></div>
+      <div class="step-body">
+        <h3>Create a pipeline</h3>
+        <p>From Opportunities → Pipelines, a named pipeline is built with ordered, renamable stages and display colours.</p>
+      </div>
+      <div class="step-body">
+        <ul>
+          <li><code>POST /pipelines</code> with stages [New Lead, Contacted, &#8230;]</li>
+          <li>Stages carry order + "show in reports" + colour mode</li>
+          <li>Pipeline immediately appears in the dropdown selector</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker">06<span class="lbl">Opportunity</span></div>
+      <div class="step-body">
+        <h3>Create &amp; move an opportunity</h3>
+        <p>Pick a pipeline from the dropdown, add a deal tied to a contact, then drag it across stages on the kanban.</p>
+      </div>
+      <div class="step-body">
+        <ul>
+          <li><code>POST /opportunities</code> with contact, pipeline, stage, value</li>
+          <li><code>KanbanBoard</code> renders stages; drag triggers <code>PATCH /:id/stage</code></li>
+          <li>Status (open/won/lost), owner, followers, tags all editable</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-marker">07<span class="lbl">Configure</span></div>
+      <div class="step-body">
+        <h3>Super admin edits pages, fields &amp; access</h3>
+        <p>The control plane edits the matrix, defines new custom fields, and can register entirely new pages.</p>
+      </div>
+      <div class="step-body">
+        <ul>
+          <li><code>PATCH /rbac/page-access</code> moves a page between roles</li>
+          <li><code>POST /custom-fields</code> adds a field — no migration needed</li>
+          <li><code>POST /page-registry</code> registers a new page/feature</li>
+          <li>Permission cache invalidates; UI updates on next load</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §08 EXTENSIBILITY -->
+<section>
+  <div class="container">
+    <div class="section-num">§ 08 — Modularity &amp; Extensibility</div>
+    <h2>Built to be <em>appended to.</em></h2>
+    <p class="lead">The whole point of the structure: today it's two pages, but every seam is designed so tomorrow's features slot in without rewrites. Four mechanisms carry that promise.</p>
+
+    <div class="detail-grid">
+      <div class="detail-card">
+        <div class="num">i.</div>
+        <h4>Self-contained modules <span class="badge new">add a folder</span></h4>
+        <p>Each module owns its routes, logic, data, and validation. New features arrive as new modules registered in one place — existing code is never modified.</p>
+      </div>
+      <div class="detail-card">
+        <div class="num">ii.</div>
+        <h4>Dynamic fields <span class="badge editable">no migration</span></h4>
+        <p>Custom-field definitions + JSONB values mean "every small thing" — a new field on contacts or opportunities — is a config change, not a schema change.</p>
+      </div>
+      <div class="detail-card">
+        <div class="num">iii.</div>
+        <h4>Page registry + RBAC <span class="badge super">super-admin</span></h4>
+        <p>Pages are data. The super admin registers a page and grants it to roles per account, so access is editable from the console exactly as required.</p>
+      </div>
+      <div class="detail-card">
+        <div class="num">iv.</div>
+        <h4>Feature flags <span class="badge core">per account</span></h4>
+        <p>Modules and pages can be switched on per account, enabling staged rollout and account-type differences without branching the codebase.</p>
+      </div>
+    </div>
+
+    <div class="subhead">Suggested build order</div>
+    <div class="timeline">
+      <div class="tl-item"><div class="week">Phase 01</div><div class="duration">Foundation</div><div class="task"><h4>Core + auth + tenancy</h4><p>Base entity, tenant middleware, RBAC guard, login. Accounts &amp; users modules. Super-admin can create an account and an admin.</p></div></div>
+      <div class="tl-item"><div class="week">Phase 02</div><div class="duration">Access</div><div class="task"><h4>RBAC + page registry</h4><p>Effective-permission resolver, editable access matrix, permission-driven nav and guards on the frontend.</p></div></div>
+      <div class="tl-item"><div class="week">Phase 03</div><div class="duration">Contacts</div><div class="task"><h4>Contacts + custom fields</h4><p>Manual form via FormBuilder, DataTable list, tags, manage-fields. The shared primitives land here.</p></div></div>
+      <div class="tl-item"><div class="week">Phase 04</div><div class="duration">Deals</div><div class="task"><h4>Pipelines + opportunities</h4><p>Pipeline/stage CRUD + dropdown, kanban &amp; list views, stage moves — full GoHighLevel-style parity.</p></div></div>
+      <div class="tl-item"><div class="week">Phase 05</div><div class="duration">Staff</div><div class="task"><h4>Employee management</h4><p>Admin-only page to create/manage employees, reusing users module + RBAC.</p></div></div>
+      <div class="tl-item"><div class="week">Phase 06</div><div class="duration">Polish</div><div class="task"><h4>Audit, flags, import/export</h4><p>Traceability, per-account feature flags, contact import — and the template for every future module.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div style="font-family: 'Fraunces', serif; font-size: 28px; font-weight: 400; line-height: 1.1; letter-spacing: -0.01em; margin-bottom: 16px;">A modular CRM,<br/>ready to grow.</div>
+        <p>This document captures the architecture for a multi-tenant, GoHighLevel-style CRM: a super-admin control plane over isolated accounts, two core business pages, and a module/registry/field design that keeps everything editable and extendable.</p>
+      </div>
+      <div>
+        <h4>Sections</h4>
+        <ul>
+          <li>§ 01  Architecture</li>
+          <li>§ 02  Roles &amp; Access</li>
+          <li>§ 03  Data Model</li>
+          <li>§ 04  Backend Modules</li>
+          <li>§ 05  API Surface</li>
+          <li>§ 06  Frontend</li>
+          <li>§ 07  Core Flows</li>
+          <li>§ 08  Extensibility</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Stack</h4>
+        <ul>
+          <li>Next.js (App Router)</li>
+          <li>NestJS / modular monolith</li>
+          <li>PostgreSQL (+ JSONB)</li>
+          <li>Redis (sessions / cache)</li>
+          <li>Object storage</li>
+        </ul>
+      </div>
+    </div>
+    <div style="margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--rule); font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between;">
+      <div>CRM Architecture Blueprint · v01</div>
+      <div>End of document ✦</div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
