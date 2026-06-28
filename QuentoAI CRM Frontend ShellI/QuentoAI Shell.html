@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="_ds/crm-design-system-e5e5bc72-7878-4f08-b625-585abb3b65ae/tokens/tokens.css">
+  <link rel="stylesheet" href="_ds/crm-design-system-e5e5bc72-7878-4f08-b625-585abb3b65ae/styles.css">
+  <script src="_ds/crm-design-system-e5e5bc72-7878-4f08-b625-585abb3b65ae/_ds_bundle.js"></script>
+  <style>
+    :root{
+      /* ===== PANZE palette (warm, light, no gradient) ===== */
+      --ink:#282828;            /* dark neutral — headings, body text, avatars, tooltips */
+      --ink-strong:#1C1C1C;
+      --accent:#33A9C7;         /* brand primary — active nav, pills, CTAs, focus */
+      --accent-strong:#2A93AE;
+      --accent-weak:rgba(51,169,199,.10);
+      --on-accent:#FFFFFF;
+      --orange:#FF9D2E; --blue:#4E93EF; --green:#2DD285;
+      /* surfaces */
+      --panel:#F3F4F7;          /* main working surface */
+      --canvas:#F3F4F7;
+      --surface:#FFFFFF;        /* lifted cards */
+      --surface-2:#E9EBF0;
+      --surface-3:#DFE2EA;
+      --sunken:#F1F2F6;
+      /* dividers/inputs only — kept very subtle */
+      --border:#E4E6EC;
+      --border-strong:#D2D5DE;
+      /* text */
+      --text:#282828; --text-muted:#6A6E77; --text-faint:#9AA0AA; --text-subtle:#9AA0AA;
+      /* status chips from DS */
+      --st-new-fg:var(--status-new-fg);             --st-new-bg:var(--status-new-bg);
+      --st-contacted-fg:var(--status-contacted-fg); --st-contacted-bg:var(--status-contacted-bg);
+      --st-qualified-fg:var(--status-qualified-fg); --st-qualified-bg:var(--status-qualified-bg);
+      --st-won-fg:var(--status-won-fg);             --st-won-bg:var(--status-won-bg);
+      --st-lost-fg:var(--status-lost-fg);           --st-lost-bg:var(--status-lost-bg);
+      --danger:#B0492E;
+      /* shape + elevation */
+      --radius-sm:10px; --radius:14px; --radius-lg:20px; --pill:999px;
+      --card-shadow:0 1px 2px rgba(26,30,28,.05), 0 12px 30px rgba(26,30,28,.08);
+      --ctrl-shadow:0 1px 2px rgba(26,30,28,.06);
+      --panel-shadow:0 30px 70px rgba(40,42,50,.16);
+      --pop-shadow:0 16px 40px rgba(20,28,38,.18);
+      --sidebar-w:248px;
+      --font:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;
+      --mono:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%}
+    body{font-family:var(--font);font-size:14px;line-height:1.5;color:var(--text);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+    .tnum{font-variant-numeric:tabular-nums}
+    button{font-family:inherit}
+    input{font-family:inherit}
+    ::placeholder{color:var(--text-faint)}
+    ::-webkit-scrollbar{width:11px;height:11px}
+    ::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:99px;border:3px solid transparent;background-clip:padding-box}
+    ::-webkit-scrollbar-thumb:hover{background:var(--text-faint);background-clip:padding-box}
+    @keyframes pop{from{opacity:0;transform:translateY(-6px) scale(.985)}to{opacity:1;transform:none}}
+  </style>
+</helmet>
+
+<div ref="{{rootRef}}" data-screen-label="App shell" style="height:100vh;width:100%;background:var(--panel);overflow:hidden">
+  <div style="height:100%;display:flex;background:var(--panel);overflow:hidden">
+
+    <!-- ============ SIDEBAR ============ -->
+    <aside style="{{asideStyle}}">
+
+      <!-- head: logo + collapse toggle -->
+      <sc-if value="{{showLabels}}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;gap:11px;padding:4px 6px 14px">
+          <div style="width:38px;height:38px;flex:none;border-radius:12px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;letter-spacing:-.02em">Q</div>
+          <span style="flex:1;font-size:18px;font-weight:700;letter-spacing:-.02em;color:var(--ink)">QuentoAI</span>
+          <button onClick="{{onToggleCollapse}}" title="Collapse" style="width:34px;height:34px;flex:none;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid transparent;background:transparent;color:var(--text-subtle);cursor:pointer" style-hover="{{iconBtnHover}}">{{toggleIconEl}}</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{collapsed}}">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:4px 0 14px">
+          <div style="width:40px;height:40px;flex:none;border-radius:13px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;letter-spacing:-.02em">Q</div>
+          <button onClick="{{onToggleCollapse}}" title="Expand" style="width:40px;height:40px;flex:none;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;border:1px solid transparent;background:transparent;color:var(--text-subtle);cursor:pointer" style-hover="{{iconBtnHover}}">{{toggleIconEl}}</button>
+        </div>
+      </sc-if>
+
+      <nav style="flex:1;display:flex;flex-direction:column;gap:4px;margin-top:6px">
+        <sc-if value="{{showLabels}}" hint-placeholder-val="{{ true }}">
+          <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint);padding:4px 12px 8px">Workspace</div>
+        </sc-if>
+        <sc-for list="{{navItems}}" as="item" hint-placeholder-count="5">
+          <button onClick="{{item.onClick}}" title="{{item.label}}" style="{{item.style}}" style-hover="{{item.hover}}">
+            <span style="display:inline-flex;align-items:center;justify-content:center;flex:none">{{item.iconEl}}</span>
+            <sc-if value="{{showLabels}}" hint-placeholder-val="{{ true }}">
+              <span style="flex:1;overflow:hidden;text-overflow:ellipsis;text-align:left">{{item.label}}</span>
+            </sc-if>
+          </button>
+        </sc-for>
+      </nav>
+
+      <div style="display:flex;flex-direction:column;gap:4px;margin-top:6px">
+        <button onClick="{{onSettings}}" title="Settings" style="{{settingsStyle}}" style-hover="{{settingsHover}}">
+          <span style="display:inline-flex;align-items:center;justify-content:center;flex:none">{{settingsIconEl}}</span>
+          <sc-if value="{{showLabels}}" hint-placeholder-val="{{ true }}"><span style="flex:1;text-align:left">Settings</span></sc-if>
+        </button>
+        <button title="Help" style="{{helpStyle}}" style-hover="{{helpHover}}">
+          <span style="display:inline-flex;align-items:center;justify-content:center;flex:none">{{helpIconEl}}</span>
+          <sc-if value="{{showLabels}}" hint-placeholder-val="{{ true }}"><span style="flex:1;text-align:left">Help &amp; support</span></sc-if>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ============ MAIN ============ -->
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+
+      <!-- ===== HEADER ===== -->
+      <header style="flex:none;display:flex;align-items:center;gap:14px;padding:18px 24px">
+        <sc-if value="{{isDashboard}}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;align-items:center;gap:6px;flex:none">
+            <sc-for list="{{pills}}" as="p" hint-placeholder-count="4">
+              <button onClick="{{p.onClick}}" style="{{p.style}}" style-hover="{{p.hover}}">{{p.label}}</button>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <div style="flex:1"></div>
+
+        <div style="position:relative;flex:none;width:248px">
+          <span style="position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--text-subtle);display:inline-flex;pointer-events:none">{{icSearch}}</span>
+          <input placeholder="Search…" style="width:100%;height:44px;border:1px solid transparent;border-radius:var(--pill);background:var(--surface);box-shadow:var(--ctrl-shadow);padding:0 16px 0 42px;font-size:14px;color:var(--text);outline:none" style-focus="{{inputFocus}}"/>
+        </div>
+
+        <button title="Notifications" style="position:relative;width:44px;height:44px;flex:none;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--pill);border:1px solid transparent;background:var(--surface);box-shadow:var(--ctrl-shadow);color:var(--text-muted);cursor:pointer" style-hover="{{iconBtnHover}}">
+          {{icBell}}
+          <span style="position:absolute;top:11px;right:12px;width:7px;height:7px;border-radius:99px;background:var(--orange);border:1.5px solid var(--surface)"></span>
+        </button>
+
+        <div data-usermenu style="position:relative;flex:none">
+          <button onClick="{{onToggleUserMenu}}" style="display:flex;align-items:center;gap:9px;height:44px;padding:0 6px 0 4px;border-radius:var(--pill);border:1px solid transparent;background:var(--surface);box-shadow:var(--ctrl-shadow);cursor:pointer" style-hover="{{iconBtnHover}}">
+            <span style="width:34px;height:34px;flex:none;border-radius:99px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700">{{userInitials}}</span>
+            <span style="display:inline-flex;color:var(--text-subtle);padding-right:4px">{{icChevron}}</span>
+          </button>
+
+          <sc-if value="{{userMenuOpen}}">
+            <div style="position:absolute;right:0;top:calc(100% + 10px);width:268px;background:color-mix(in srgb, var(--surface) 70%, transparent);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border:1px solid rgba(255,255,255,.5);border-radius:var(--radius);box-shadow:var(--pop-shadow);padding:8px;z-index:60;animation:pop .14s ease both">
+              <div style="display:flex;gap:11px;align-items:center;padding:8px 8px 12px">
+                <span style="width:40px;height:40px;flex:none;border-radius:99px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700">{{userInitials}}</span>
+                <div style="min-width:0">
+                  <div style="font-size:13.5px;font-weight:600;color:var(--text)">{{userName}}</div>
+                  <div style="font-size:12px;color:var(--text-subtle);overflow:hidden;text-overflow:ellipsis">{{userEmail}}</div>
+                </div>
+              </div>
+              <div style="height:1px;background:var(--border);margin:2px 0 8px"></div>
+              <div style="font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);padding:2px 8px 6px">Viewing as · demo</div>
+              <sc-for list="{{roleOptions}}" as="opt" hint-placeholder-count="3">
+                <button onClick="{{opt.onClick}}" style="{{opt.style}}" style-hover="{{opt.hover}}">
+                  <span style="width:8px;height:8px;border-radius:99px;flex:none;background:{{opt.dot}}"></span>
+                  <span style="flex:1;display:flex;flex-direction:column;align-items:flex-start;line-height:1.25">
+                    <span style="font-size:13px;font-weight:600;color:var(--text)">{{opt.label}}</span>
+                    <span style="font-size:11.5px;color:var(--text-subtle)">{{opt.short}}</span>
+                  </span>
+                  <sc-if value="{{opt.active}}"><span style="display:inline-flex;color:var(--accent)">{{checkEl}}</span></sc-if>
+                </button>
+              </sc-for>
+              <div style="height:1px;background:var(--border);margin:8px 0"></div>
+              <button onClick="{{onSettings}}" style="{{menuItemStyle}}" style-hover="{{menuItemHover}}"><span style="display:inline-flex;color:var(--text-subtle)">{{icSlidersSm}}</span><span>Settings</span></button>
+              <button style="{{menuItemStyle}}" style-hover="{{menuItemDangerHover}}"><span style="display:inline-flex;color:var(--text-subtle)">{{icLogout}}</span><span>Sign out</span></button>
+            </div>
+          </sc-if>
+        </div>
+      </header>
+
+      <!-- ===== CONTENT ===== -->
+      <main style="flex:1;min-width:0;overflow-y:auto;background:var(--panel)">
+        <div style="max-width:1280px;margin:0 auto;padding:8px 30px 56px">
+
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:24px;flex-wrap:wrap">
+            <div style="min-width:0">
+              <p style="margin:0 0 6px;font-size:13.5px;color:var(--text-muted)">{{pageEyebrow}}</p>
+              <h1 style="margin:0;font-size:34px;font-weight:700;letter-spacing:-.03em;color:var(--ink);line-height:1.05">{{pageTitle}}</h1>
+            </div>
+            <sc-if value="{{isDashboard}}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;gap:10px;flex:none">
+                <button style="height:44px;padding:0 16px;border-radius:var(--pill);border:1px solid transparent;background:var(--surface);box-shadow:var(--ctrl-shadow);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:8px" style-hover="{{secondaryHover}}"><span style="display:inline-flex;color:var(--text-subtle)">{{icCalendar}}</span><span>Last 30 days</span><span style="display:inline-flex;color:var(--text-subtle)">{{icChevron}}</span></button>
+                <button style="height:44px;padding:0 18px;border-radius:var(--pill);border:1px solid var(--accent);background:var(--accent);color:var(--on-accent);font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:8px" style-hover="{{primaryHover}}">{{icPlus}}<span>Add widget</span></button>
+              </div>
+            </sc-if>
+            <sc-if value="{{isContacts}}">
+              <button onClick="{{onNewContact}}" style="height:44px;padding:0 18px;border-radius:var(--pill);border:1px solid var(--accent);background:var(--accent);color:var(--on-accent);font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:8px" style-hover="{{primaryHover}}">{{icPlus}}<span>New contact</span></button>
+            </sc-if>
+          </div>
+
+          <!-- ===== Contacts table ===== -->
+          <sc-if value="{{isContacts}}">
+            <div style="background:var(--surface);box-shadow:var(--card-shadow);border-radius:var(--radius-lg);overflow:hidden">
+              <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border)">
+                <div style="position:relative;flex:1;max-width:320px">
+                  <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text-subtle);display:inline-flex;pointer-events:none">{{icSearch}}</span>
+                  <input value="{{query}}" onInput="{{onQuery}}" placeholder="Search name, email, phone…" style="width:100%;height:40px;border:1px solid var(--border);border-radius:var(--pill);background:var(--sunken);padding:0 14px 0 40px;font-size:13.5px;color:var(--text);outline:none" style-focus="{{inputFocus}}"/>
+                </div>
+                <div style="flex:1"></div>
+                <span style="font-size:12.5px;color:var(--text-subtle)"><span class="tnum" style="font-family:var(--mono);color:var(--text-muted)">{{contactCount}}</span> total</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1.7fr 1.05fr 1.5fr 1.1fr .85fr .8fr;gap:14px;padding:11px 18px;border-bottom:1px solid var(--border);font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-subtle)">
+                <div>Name</div><div>Phone</div><div>Email</div><div>Source</div><div>Created</div><div>Status</div>
+              </div>
+              <sc-for list="{{rows}}" as="c" hint-placeholder-count="8">
+                <div onClick="{{c.onClick}}" style="{{c.rowStyle}}" style-hover="{{c.rowHover}}">
+                  <div style="display:flex;align-items:center;gap:11px;min-width:0">
+                    <span style="width:28px;height:28px;flex:none;border-radius:99px;background:var(--surface-2);color:var(--text-muted);display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:600">{{c.initials}}</span>
+                    <span style="font-size:13.5px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{c.name}}</span>
+                  </div>
+                  <div class="tnum" style="font-family:var(--mono);font-size:12.5px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{c.phone}}</div>
+                  <div style="font-size:13px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{c.email}}</div>
+                  <div style="font-size:13px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{c.source}}</div>
+                  <div class="tnum" style="font-family:var(--mono);font-size:12.5px;color:var(--text-subtle);white-space:nowrap">{{c.created}}</div>
+                  <div><span style="{{c.statusStyle}}">{{c.status}}</span></div>
+                </div>
+              </sc-for>
+              <sc-if value="{{noRows}}">
+                <div style="padding:44px;text-align:center;color:var(--text-subtle);font-size:13.5px">No contacts match your search.</div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <!-- ===== Dashboard ===== -->
+          <sc-if value="{{isDashboard}}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px">
+              <sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
+                <div style="background:var(--surface);box-shadow:var(--card-shadow);border-radius:var(--radius-lg);padding:18px 19px;display:flex;flex-direction:column;gap:10px">
+                  <span style="font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)">{{k.label}}</span>
+                  <span class="tnum" style="font-family:var(--mono);font-size:30px;font-weight:500;letter-spacing:-.02em;color:var(--text)">{{k.value}}</span>
+                  <span style="font-size:12px;color:var(--text-subtle)"><span style="{{k.deltaStyle}}">{{k.delta}}</span> {{k.sub}}</span>
+                </div>
+              </sc-for>
+            </div>
+            <!-- Leads over time — bar chart -->
+            <div style="background:var(--surface);box-shadow:var(--card-shadow);border-radius:var(--radius-lg);padding:20px 22px;margin-bottom:16px">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between">
+                <div>
+                  <span style="font-size:15px;font-weight:600;color:var(--text)">Leads over time</span>
+                  <div style="display:flex;align-items:baseline;gap:9px;margin-top:5px">
+                    <span class="tnum" style="font-family:var(--mono);font-size:24px;font-weight:500;color:var(--text);letter-spacing:-.02em">1,248</span>
+                    <span style="font-size:12.5px;color:var(--green);font-weight:600">+6.2%</span>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:16px">
+                  <div style="display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:3px;background:var(--orange)"></span><span style="font-size:12.5px;color:var(--text-muted)">Monthly leads</span></div>
+                  <button style="width:36px;height:36px;border-radius:var(--pill);border:1px solid transparent;background:var(--sunken);color:var(--text-subtle);display:inline-flex;align-items:center;justify-content:center;cursor:pointer" style-hover="{{secondaryHover}}">{{icSliders}}</button>
+                </div>
+              </div>
+              <div style="display:flex;align-items:flex-end;gap:10px;padding-top:30px">
+                <sc-for list="{{months}}" as="m" hint-placeholder-count="12">
+                  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:9px">
+                    <div style="position:relative;width:100%;height:148px;display:flex;align-items:flex-end;justify-content:center">
+                      <sc-if value="{{m.hot}}"><div style="{{m.tipStyle}}">{{m.tip}}</div></sc-if>
+                      <div style="{{m.barStyle}}"></div>
+                    </div>
+                    <span style="font-family:var(--mono);font-size:11px;color:var(--text-faint)">{{m.label}}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:16px">
+              <!-- Leads by source — donut -->
+              <div style="background:var(--surface);box-shadow:var(--card-shadow);border-radius:var(--radius-lg);padding:20px 22px;display:flex;flex-direction:column">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <span style="font-size:15px;font-weight:600;color:var(--text)">Leads by source</span>
+                  <button style="width:36px;height:36px;border-radius:var(--pill);border:1px solid transparent;background:var(--sunken);color:var(--text-subtle);display:inline-flex;align-items:center;justify-content:center;cursor:pointer" style-hover="{{secondaryHover}}">{{icSliders}}</button>
+                </div>
+                <div style="flex:1;display:flex;align-items:center;gap:34px;padding:18px 6px 4px">
+                  <div style="position:relative;width:158px;height:158px;flex:none;border-radius:50%;background:conic-gradient(var(--orange) 0 42%,var(--blue) 42% 70%,var(--surface-3) 70% 100%)">
+                    <div style="position:absolute;inset:20px;border-radius:50%;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center">
+                      <span class="tnum" style="font-family:var(--mono);font-size:24px;font-weight:500;color:var(--text);letter-spacing:-.02em">1,248</span>
+                      <span style="font-size:11px;color:var(--text-subtle)">total leads</span>
+                    </div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:14px">
+                    <sc-for list="{{sources}}" as="s" hint-placeholder-count="3">
+                      <div style="display:flex;align-items:center;gap:10px">
+                        <span style="width:9px;height:9px;border-radius:3px;flex:none;background:{{s.color}}"></span>
+                        <span style="font-size:13.5px;color:var(--text-muted);min-width:128px">{{s.label}}</span>
+                        <span class="tnum" style="font-family:var(--mono);font-size:13.5px;font-weight:500;color:var(--text)">{{s.pct}}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+              <!-- Recent activity -->
+              <div style="background:var(--surface);box-shadow:var(--card-shadow);border-radius:var(--radius-lg);padding:20px 22px;display:flex;flex-direction:column">
+                <span style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px">Recent activity</span>
+                <div style="display:flex;flex-direction:column">
+                  <sc-for list="{{activity}}" as="a" hint-placeholder-count="5">
+                    <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)">
+                      <span style="width:32px;height:32px;flex:none;border-radius:99px;background:var(--surface-2);color:var(--text-muted);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600">{{a.initials}}</span>
+                      <div style="flex:1;min-width:0">
+                        <div style="font-size:13px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{a.name}}</div>
+                        <div style="font-size:12px;color:var(--text-subtle);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{a.text}}</div>
+                      </div>
+                      <span class="tnum" style="font-family:var(--mono);font-size:11.5px;color:var(--text-faint);white-space:nowrap">{{a.created}}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
+              <!-- Pipeline by stage -->
+              <div style="background:var(--surface);box-shadow:var(--card-shadow);border-radius:var(--radius-lg);padding:20px 22px;display:flex;flex-direction:column">
+                <span style="font-size:15px;font-weight:600;color:var(--text)">Pipeline by stage</span>
+                <div style="display:flex;flex-direction:column;gap:17px;margin-top:18px">
+                  <sc-for list="{{stages}}" as="s" hint-placeholder-count="4">
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                      <div style="display:flex;align-items:center;justify-content:space-between">
+                        <span style="font-size:13px;color:var(--text-muted)">{{s.label}}</span>
+                        <span class="tnum" style="font-family:var(--mono);font-size:13px;font-weight:500;color:var(--text)">{{s.count}}</span>
+                      </div>
+                      <div style="height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden"><div style="{{s.fillStyle}}"></div></div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <!-- Top campaigns -->
+              <div style="background:var(--surface);box-shadow:var(--card-shadow);border-radius:var(--radius-lg);padding:20px 22px;display:flex;flex-direction:column">
+                <span style="font-size:15px;font-weight:600;color:var(--text)">Top campaigns</span>
+                <div style="display:flex;flex-direction:column;gap:15px;margin-top:18px">
+                  <sc-for list="{{campaigns}}" as="cp" hint-placeholder-count="4">
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                        <span style="font-family:var(--mono);font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{cp.name}}</span>
+                        <span class="tnum" style="font-family:var(--mono);font-size:13px;font-weight:500;color:var(--text);flex:none">{{cp.leads}}</span>
+                      </div>
+                      <div style="height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden"><div style="{{cp.fillStyle}}"></div></div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ===== Other ===== -->
+          <sc-if value="{{isOther}}">
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:78px 24px;background:var(--surface);box-shadow:var(--card-shadow);border-radius:var(--radius-lg)">
+              <div style="width:56px;height:56px;border-radius:16px;background:var(--surface-2);color:var(--text-muted);display:flex;align-items:center;justify-content:center;margin-bottom:18px">{{activeIconEl}}</div>
+              <h2 style="margin:0;font-size:18px;font-weight:600;color:var(--text)">{{pageTitle}}</h2>
+              <p style="margin:9px 0 22px;font-size:14px;color:var(--text-muted);max-width:400px">This module is next in the build queue. The shell, navigation, and design system are ready to drop it into.</p>
+              <button onClick="{{onBackToDashboard}}" style="height:44px;padding:0 18px;border-radius:var(--pill);border:1px solid transparent;background:var(--sunken);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:8px" style-hover="{{secondaryHover}}">{{icBack}}<span>Back to dashboard</span></button>
+            </div>
+          </sc-if>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ===== DRAWERS ===== -->
+  <sc-if value="{{drawerOpen}}">
+    <div onClick="{{onCloseDrawer}}" style="position:fixed;inset:0;background:rgba(18,24,38,.32);backdrop-filter:blur(5px) saturate(120%);-webkit-backdrop-filter:blur(5px) saturate(120%);z-index:80"></div>
+    <div style="position:fixed;top:0;right:0;height:100vh;width:452px;max-width:92vw;background:var(--surface);box-shadow:-14px 0 44px rgba(20,28,38,.18);z-index:90;display:flex;flex-direction:column">
+
+      <sc-if value="{{isCreate}}">
+        <div style="flex:none;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:22px 24px;border-bottom:1px solid var(--border)">
+          <div>
+            <h3 style="margin:0;font-size:18px;font-weight:700;color:var(--text)">New contact</h3>
+            <p style="margin:4px 0 0;font-size:13px;color:var(--text-muted)">Add a lead to this workspace.</p>
+          </div>
+          <button onClick="{{onCloseDrawer}}" style="width:36px;height:36px;flex:none;border-radius:var(--pill);border:1px solid transparent;background:var(--sunken);color:var(--text-muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center" style-hover="{{iconBtnHover}}">{{icClose}}</button>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:18px">
+          <div>
+            <label style="{{fieldLabel}}">Name</label>
+            <input value="{{form.name}}" onInput="{{onFormName}}" placeholder="Full name" style="{{fieldInput}}" style-focus="{{inputFocus}}"/>
+          </div>
+          <div>
+            <label style="{{fieldLabel}}">Phone</label>
+            <input value="{{form.phone}}" onInput="{{onFormPhone}}" placeholder="+91 98XXX XXXXX" style="{{fieldInput}}" style-focus="{{inputFocus}}"/>
+          </div>
+          <div>
+            <label style="{{fieldLabel}}">Email</label>
+            <input value="{{form.email}}" onInput="{{onFormEmail}}" placeholder="name@email.com" style="{{fieldInput}}" style-focus="{{inputFocus}}"/>
+          </div>
+          <div>
+            <label style="{{fieldLabel}}">Source</label>
+            <div style="position:relative">
+              <select value="{{form.source}}" onChange="{{onFormSource}}" style="{{selectStyle}}" style-focus="{{inputFocus}}">
+                <option>Meta Lead Form</option>
+                <option>Click-to-WhatsApp</option>
+                <option>Landing Page</option>
+              </select>
+              <span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-subtle);display:inline-flex">{{selectChevron}}</span>
+            </div>
+          </div>
+          <div>
+            <label style="{{fieldLabel}}">Status</label>
+            <div style="position:relative">
+              <select value="{{form.status}}" onChange="{{onFormStatus}}" style="{{selectStyle}}" style-focus="{{inputFocus}}">
+                <option>New</option>
+                <option>Contacted</option>
+                <option>Qualified</option>
+                <option>Won</option>
+                <option>Lost</option>
+              </select>
+              <span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-subtle);display:inline-flex">{{selectChevron}}</span>
+            </div>
+          </div>
+          <div>
+            <label style="{{fieldLabel}}">Created</label>
+            <div style="height:42px;border:1px solid var(--border);border-radius:var(--radius);background:var(--sunken);padding:0 14px;display:flex;align-items:center;font-size:14px;color:var(--text-subtle)">Today · Jun 25, 2026</div>
+          </div>
+        </div>
+        <div style="flex:none;display:flex;justify-content:flex-end;gap:10px;padding:18px 24px;border-top:1px solid var(--border)">
+          <button onClick="{{onCloseDrawer}}" style="height:44px;padding:0 18px;border-radius:var(--pill);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;font-weight:600;cursor:pointer" style-hover="{{secondaryHover}}">Cancel</button>
+          <button onClick="{{onSave}}" style="{{saveStyle}}">Create contact</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isDetail}}">
+        <div style="flex:none;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:22px 24px;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:13px;min-width:0">
+            <span style="width:44px;height:44px;flex:none;border-radius:99px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">{{selInitials}}</span>
+            <div style="min-width:0">
+              <h3 style="margin:0;font-size:18px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{selName}}</h3>
+              <div style="margin-top:3px">
+                <span style="font-size:13px;color:var(--text-muted)">{{selSource}}</span>
+              </div>
+            </div>
+          </div>
+          <button onClick="{{onCloseDrawer}}" style="width:36px;height:36px;flex:none;border-radius:var(--pill);border:1px solid transparent;background:var(--sunken);color:var(--text-muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center" style-hover="{{iconBtnHover}}">{{icClose}}</button>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:22px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <span style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-subtle)">Details</span>
+            <span style="{{selStatusStyle}}">{{selStatus}}</span>
+          </div>
+          <div style="display:flex;flex-direction:column">
+            <sc-for list="{{detailRows}}" as="r" hint-placeholder-count="4">
+              <div style="display:grid;grid-template-columns:104px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+                <span style="font-size:12.5px;color:var(--text-subtle)">{{r.k}}</span>
+                <span style="{{r.vs}}">{{r.v}}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+            <button onClick="{{onToggleTracking}}" style="width:100%;display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--sunken);border:none;cursor:pointer;text-align:left" style-hover="{{secondaryHover}}">
+              <span style="display:inline-flex;color:var(--text-subtle)">{{icActivity}}</span>
+              <span style="flex:1;font-size:13.5px;font-weight:600;color:var(--text)">Tracking data</span>
+              <span style="font-size:12px;color:var(--text-subtle)">6 fields</span>
+              <span style="{{trackChevStyle}}">{{selectChevron}}</span>
+            </button>
+            <sc-if value="{{trackingOpen}}">
+              <div style="padding:4px 16px 12px;border-top:1px solid var(--border)">
+                <sc-for list="{{trackRows}}" as="t" hint-placeholder-count="6">
+                  <div style="display:flex;flex-direction:column;gap:3px;padding:9px 0;border-bottom:1px solid var(--border)">
+                    <span style="font-family:var(--mono);font-size:11px;color:var(--text-subtle);letter-spacing:.02em">{{t.k}}</span>
+                    <span style="font-family:var(--mono);font-size:12.5px;color:var(--text-muted);word-break:break-all">{{t.v}}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;role&quot;: { &quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;super&quot;, &quot;client_admin&quot;, &quot;employee&quot;], &quot;default&quot;: &quot;super&quot;, &quot;tsType&quot;: &quot;string&quot; },
+  &quot;accentColor&quot;: { &quot;editor&quot;: &quot;color&quot;, &quot;options&quot;: [&quot;#33A9C7&quot;, &quot;#13241F&quot;, &quot;#243B53&quot;, &quot;#5B3A7A&quot;, &quot;#3A2A1C&quot;], &quot;default&quot;: &quot;#33A9C7&quot;, &quot;tsType&quot;: &quot;string&quot; },
+  &quot;bgColor&quot;: { &quot;editor&quot;: &quot;color&quot;, &quot;options&quot;: [&quot;#F3F4F7&quot;, &quot;#F8FAFC&quot;, &quot;#FFFFFF&quot;, &quot;#F5F3FA&quot;], &quot;default&quot;: &quot;#F3F4F7&quot;, &quot;tsType&quot;: &quot;string&quot; },
+  &quot;cardColor&quot;: { &quot;editor&quot;: &quot;color&quot;, &quot;options&quot;: [&quot;#FFFFFF&quot;, &quot;#FBFBFA&quot;, &quot;#FCFDFE&quot;], &quot;default&quot;: &quot;#FFFFFF&quot;, &quot;tsType&quot;: &quot;string&quot; },
+  &quot;textColor&quot;: { &quot;editor&quot;: &quot;color&quot;, &quot;options&quot;: [&quot;#282828&quot;, &quot;#16191C&quot;, &quot;#0B1220&quot;], &quot;default&quot;: &quot;#282828&quot;, &quot;tsType&quot;: &quot;string&quot; },
+  &quot;chartOrange&quot;: { &quot;editor&quot;: &quot;color&quot;, &quot;options&quot;: [&quot;#FF9D2E&quot;, &quot;#F97316&quot;, &quot;#EA580C&quot;, &quot;#F59E0B&quot;], &quot;default&quot;: &quot;#FF9D2E&quot;, &quot;tsType&quot;: &quot;string&quot; },
+  &quot;chartBlue&quot;: { &quot;editor&quot;: &quot;color&quot;, &quot;options&quot;: [&quot;#4E93EF&quot;, &quot;#2E90FA&quot;, &quot;#3B82F6&quot;, &quot;#6366F1&quot;], &quot;default&quot;: &quot;#4E93EF&quot;, &quot;tsType&quot;: &quot;string&quot; },
+  &quot;chartGreen&quot;: { &quot;editor&quot;: &quot;color&quot;, &quot;options&quot;: [&quot;#2DD285&quot;, &quot;#16A34A&quot;, &quot;#10B981&quot;, &quot;#059669&quot;], &quot;default&quot;: &quot;#2DD285&quot;, &quot;tsType&quot;: &quot;string&quot; }
+}">
+class Component extends DCLogic {
+  SEED = [
+    { id: 1,  name: 'Aarav Sharma',    phone: '+91 98201 44521', email: 'aarav.sharma@gmail.com',    source: 'Meta Lead Form',     status: 'New',       created: 'Jun 24, 2026', vertical: 'hair' },
+    { id: 2,  name: 'Priya Nair',      phone: '+91 99860 23417', email: 'priya.nair92@gmail.com',     source: 'Click-to-WhatsApp',  status: 'Contacted', created: 'Jun 24, 2026', vertical: 'interior' },
+    { id: 3,  name: 'Rohan Mehta',     phone: '+91 98330 77120', email: 'rohan.mehta@outlook.com',    source: 'Landing Page',       status: 'Qualified', created: 'Jun 23, 2026', vertical: 'hair' },
+    { id: 4,  name: 'Ananya Iyer',     phone: '+91 97411 56098', email: 'ananya.iyer@gmail.com',      source: 'Meta Lead Form',     status: 'New',       created: 'Jun 23, 2026', vertical: 'pilates' },
+    { id: 5,  name: 'Vikram Singh',    phone: '+91 98119 30844', email: 'vikram.singh@gmail.com',     source: 'Click-to-WhatsApp',  status: 'Won',       created: 'Jun 22, 2026', vertical: 'hair' },
+    { id: 6,  name: 'Sneha Reddy',     phone: '+91 99490 61272', email: 'sneha.reddy@gmail.com',      source: 'Landing Page',       status: 'Contacted', created: 'Jun 22, 2026', vertical: 'interior' },
+    { id: 7,  name: 'Karthik Menon',   phone: '+91 98470 11935', email: 'karthik.menon@gmail.com',    source: 'Meta Lead Form',     status: 'Lost',      created: 'Jun 21, 2026', vertical: 'pilates' },
+    { id: 8,  name: 'Divya Kapoor',    phone: '+91 98711 80456', email: 'divya.kapoor@gmail.com',     source: 'Click-to-WhatsApp',  status: 'Qualified', created: 'Jun 21, 2026', vertical: 'interior' },
+    { id: 9,  name: 'Arjun Desai',     phone: '+91 98250 44390', email: 'arjun.desai@gmail.com',      source: 'Landing Page',       status: 'New',       created: 'Jun 20, 2026', vertical: 'hair' },
+    { id: 10, name: 'Meera Joshi',     phone: '+91 99201 76588', email: 'meera.joshi@gmail.com',      source: 'Meta Lead Form',     status: 'Contacted', created: 'Jun 20, 2026', vertical: 'pilates' },
+    { id: 11, name: 'Rahul Verma',     phone: '+91 98910 22641', email: 'rahul.verma@gmail.com',      source: 'Click-to-WhatsApp',  status: 'New',       created: 'Jun 19, 2026', vertical: 'interior' },
+    { id: 12, name: 'Ishita Banerjee', phone: '+91 98300 95513', email: 'ishita.banerjee@gmail.com',  source: 'Landing Page',       status: 'Qualified', created: 'Jun 19, 2026', vertical: 'hair' }
+  ];
+  state = { role: null, active: 'dashboard', collapsed: false, timeRange: 'This Month', userMenu: false, drawer: null, selectedId: null, trackingOpen: false, query: '', contacts: this.SEED, form: { name: '', phone: '', email: '', source: 'Meta Lead Form', status: 'New' } };
+
+  rootRef = (el) => { this.rootEl = el; };
+
+  ICONS = {
+    'layout-dashboard': [['rect',{x:3,y:3,width:7,height:9,rx:1}],['rect',{x:14,y:3,width:7,height:5,rx:1}],['rect',{x:14,y:12,width:7,height:9,rx:1}],['rect',{x:3,y:16,width:7,height:5,rx:1}]],
+    'users': [['path',{d:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'}],['circle',{cx:9,cy:7,r:4}],['path',{d:'M23 21v-2a4 4 0 0 0-3-3.87'}],['path',{d:'M16 3.13a4 4 0 0 1 0 7.75'}]],
+    'trending-up': [['polyline',{points:'23 6 13.5 15.5 8.5 10.5 1 18'}],['polyline',{points:'17 6 23 6 23 12'}]],
+    'share-2': [['circle',{cx:18,cy:5,r:3}],['circle',{cx:6,cy:12,r:3}],['circle',{cx:18,cy:19,r:3}],['line',{x1:8.59,y1:13.51,x2:15.42,y2:17.49}],['line',{x1:15.41,y1:6.51,x2:8.59,y2:10.49}]],
+    'shield': [['path',{d:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'}]],
+    'sliders': [['line',{x1:4,y1:21,x2:4,y2:14}],['line',{x1:4,y1:10,x2:4,y2:3}],['line',{x1:12,y1:21,x2:12,y2:12}],['line',{x1:12,y1:8,x2:12,y2:3}],['line',{x1:20,y1:21,x2:20,y2:16}],['line',{x1:20,y1:12,x2:20,y2:3}],['line',{x1:1,y1:14,x2:7,y2:14}],['line',{x1:9,y1:8,x2:15,y2:8}],['line',{x1:17,y1:16,x2:23,y2:16}]],
+    'search': [['circle',{cx:11,cy:11,r:8}],['line',{x1:21,y1:21,x2:16.65,y2:16.65}]],
+    'bell': [['path',{d:'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9'}],['path',{d:'M13.73 21a2 2 0 0 1-3.46 0'}]],
+    'chevron-down': [['polyline',{points:'6 9 12 15 18 9'}]],
+    'chevrons-left': [['polyline',{points:'11 17 6 12 11 7'}],['polyline',{points:'18 17 13 12 18 7'}]],
+    'chevrons-right': [['polyline',{points:'13 17 18 12 13 7'}],['polyline',{points:'6 17 11 12 6 7'}]],
+    'check': [['polyline',{points:'20 6 9 17 4 12'}]],
+    'plus': [['line',{x1:12,y1:5,x2:12,y2:19}],['line',{x1:5,y1:12,x2:19,y2:12}]],
+    'calendar': [['rect',{x:3,y:4,width:18,height:18,rx:2}],['line',{x1:16,y1:2,x2:16,y2:6}],['line',{x1:8,y1:2,x2:8,y2:6}],['line',{x1:3,y1:10,x2:21,y2:10}]],
+    'log-out': [['path',{d:'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4'}],['polyline',{points:'16 17 21 12 16 7'}],['line',{x1:21,y1:12,x2:9,y2:12}]],
+    'arrow-left': [['line',{x1:19,y1:12,x2:5,y2:12}],['polyline',{points:'12 19 5 12 12 5'}]],
+    'x': [['line',{x1:18,y1:6,x2:6,y2:18}],['line',{x1:6,y1:6,x2:18,y2:18}]],
+    'activity': [['polyline',{points:'22 12 18 12 15 21 9 3 6 12 2 12'}]],
+    'help-circle': [['circle',{cx:12,cy:12,r:10}],['path',{d:'M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3'}],['line',{x1:12,y1:17,x2:12.01,y2:17}]]
+  };
+
+  ic(name, size) {
+    const defs = this.ICONS[name] || [];
+    return React.createElement('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+      defs.map((d, i) => React.createElement(d[0], Object.assign({ key: i }, d[1]))));
+  }
+
+  get role() { return this.state.role || this.props.role || 'super'; }
+
+  componentDidMount() {
+    this.applyTheme();
+    this._onDoc = (e) => {
+      if (this.state.userMenu && !(e.target.closest && e.target.closest('[data-usermenu]'))) this.setState({ userMenu: false });
+    };
+    document.addEventListener('mousedown', this._onDoc);
+  }
+  componentDidUpdate() { this.applyTheme(); }
+  componentWillUnmount() { document.removeEventListener('mousedown', this._onDoc); }
+
+  applyTheme() {
+    const el = this.rootEl; if (!el) return;
+    const p = this.props || {};
+    const set = (k, v) => { if (v) el.style.setProperty(k, v); };
+    if (p.accentColor) {
+      const a = p.accentColor;
+      el.style.setProperty('--accent', a);
+      el.style.setProperty('--accent-strong', 'color-mix(in srgb, ' + a + ' 82%, #000)');
+      el.style.setProperty('--accent-weak', 'color-mix(in srgb, ' + a + ' 12%, #fff)');
+    }
+    if (p.bgColor) { el.style.setProperty('--panel', p.bgColor); el.style.setProperty('--canvas', p.bgColor); }
+    set('--surface', p.cardColor);
+    if (p.textColor) {
+      el.style.setProperty('--text', p.textColor);
+      el.style.setProperty('--ink', p.textColor);
+      el.style.setProperty('--ink-strong', 'color-mix(in srgb, ' + p.textColor + ' 80%, #000)');
+    }
+    set('--orange', p.chartOrange);
+    set('--blue', p.chartBlue);
+    set('--green', p.chartGreen);
+    el.style.setProperty('--sidebar-w', this.state.collapsed ? '80px' : '248px');
+  }
+
+  go(id) { this.setState({ active: id }); }
+  openCreate() { this.setState({ drawer: 'create', userMenu: false, form: { name: '', phone: '', email: '', source: 'Meta Lead Form', status: 'New' } }); }
+  openDetail(id) { this.setState({ drawer: 'detail', selectedId: id, trackingOpen: false }); }
+  closeDrawer() { this.setState({ drawer: null }); }
+  setField(k, v) { this.setState(s => ({ form: Object.assign({}, s.form, { [k]: v }) })); }
+  saveContact() {
+    const f = this.state.form; if (!f.name.trim()) return;
+    this.setState(s => {
+      const id = Math.max(0, ...s.contacts.map(c => c.id)) + 1;
+      const c = { id, name: f.name.trim(), phone: f.phone.trim() || '\u2014', email: f.email.trim() || '\u2014', source: f.source, status: f.status, created: 'Jun 25, 2026', vertical: 'interior' };
+      return { contacts: [c, ...s.contacts], drawer: null };
+    });
+  }
+  initials(n) { return n.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase(); }
+  tok(len, seed) { const cs = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz0123456789'; let s = '', x = (seed * 9301 + 49297) % 233280; for (let i = 0; i < len; i++) { x = (x * 9301 + 49297) % 233280; s += cs[Math.floor(x / 233280 * cs.length)]; } return s; }
+  makeTrack(c) {
+    const id = c.id, meta = c.source === 'Meta Lead Form', ctwa = c.source === 'Click-to-WhatsApp', lp = c.source === 'Landing Page';
+    const fbp = 'fb.1.17' + (500000000000 + id * 8137) + '.' + (1000000000 + id * 73);
+    const campMap = { hair: 'hairtransplant', interior: 'interiordesign', pilates: 'pilates' };
+    const chan = meta ? 'meta' : ctwa ? 'ctwa' : 'lp';
+    const dash = '\u2014';
+    return {
+      fbclid: lp ? dash : 'IwAR' + this.tok(20, id * 7),
+      fbp,
+      fbc: meta ? ('fb.1.17' + (500000000000 + id * 8137) + '.IwAR' + this.tok(8, id * 3)) : dash,
+      ctwa_clid: ctwa ? ('Aw' + this.tok(24, id * 5)) : dash,
+      utm_source: meta ? 'facebook' : ctwa ? 'whatsapp' : 'google',
+      utm_campaign: (campMap[c.vertical] || 'general') + '_' + chan + '_jun26'
+    };
+  }
+  setRole(r) { this.setState({ role: r, userMenu: false }); }
+
+  renderVals() {
+    const role = this.role;
+    const active = this.state.active;
+    const collapsed = this.state.collapsed;
+
+    const ROLE_META = {
+      super:        { label: 'Super Admin',  short: 'Agency · full access',  dot: 'var(--orange)' },
+      client_admin: { label: 'Client Admin', short: 'Manages own team',       dot: 'var(--blue)' },
+      employee:     { label: 'Employee',     short: 'Assigned access only',   dot: 'var(--green)' }
+    };
+
+    const DEFS = [
+      { id: 'dashboard',     label: 'Dashboard',     icon: 'layout-dashboard', roles: ['super','client_admin','employee'] },
+      { id: 'contacts',      label: 'Contacts',      icon: 'users',            roles: ['super','client_admin','employee'] },
+      { id: 'opportunities', label: 'Opportunities', icon: 'trending-up',      roles: ['super','client_admin','employee'] },
+      { id: 'integrations',  label: 'Integrations',  icon: 'share-2',          roles: ['super','client_admin'] },
+      { id: 'staff',         label: 'Staff',         icon: 'shield',           roles: ['super','client_admin'] }
+    ];
+
+    // ===== sidebar + nav button styles (collapse-aware) =====
+    const asideStyle = {
+      width: 'var(--sidebar-w)', flex: 'none', transition: 'width .18s ease',
+      display: 'flex', flexDirection: 'column', overflow: 'hidden',
+      padding: collapsed ? '18px 18px' : '18px 16px'
+    };
+    const navBtn = (a) => ({
+      display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
+      gap: '12px', width: collapsed ? '44px' : '100%', height: collapsed ? '44px' : '46px',
+      padding: collapsed ? '0' : '0 14px',
+      borderRadius: collapsed ? '999px' : '15px',
+      border: '1px solid transparent',
+      background: a ? 'var(--accent)' : 'transparent',
+      color: a ? '#fff' : 'var(--text-muted)',
+      fontSize: '14px', fontWeight: a ? 600 : 500,
+      cursor: 'pointer', position: 'relative', whiteSpace: 'nowrap'
+    });
+    const navHover = (a) => (a ? { background: 'var(--accent)' } : { background: 'var(--surface-2)', color: 'var(--text)' });
+
+    const navItems = DEFS.filter(d => d.roles.includes(role)).map(d => {
+      const a = d.id === active;
+      return { id: d.id, label: d.label, active: a, iconEl: this.ic(d.icon, 20), style: navBtn(a), hover: navHover(a), onClick: () => this.go(d.id) };
+    });
+
+    const settingsActive = active === 'settings';
+
+    // ===== segmented pill nav =====
+    const PILLS = ['Today', 'This Week', 'This Month', 'Reports'];
+    const pillStyle = (a) => ({
+      height: '42px', padding: '0 20px', borderRadius: '999px',
+      border: '1px solid transparent',
+      background: a ? 'var(--accent)' : 'var(--surface)',
+      boxShadow: a ? 'none' : 'var(--ctrl-shadow)',
+      color: a ? '#fff' : 'var(--text-muted)',
+      fontSize: '13.5px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap'
+    });
+    const pills = PILLS.map(p => {
+      const a = p === this.state.timeRange;
+      return { label: p, style: pillStyle(a), hover: a ? { background: 'var(--accent)' } : { background: 'var(--surface-2)', color: 'var(--text)' }, onClick: () => this.setState({ timeRange: p }) };
+    });
+
+    const roleOptStyle = (a) => ({
+      display: 'flex', alignItems: 'center', gap: '11px', width: '100%', padding: '8px 10px',
+      borderRadius: '10px', border: '1px solid transparent', background: a ? 'var(--accent-weak)' : 'transparent',
+      cursor: 'pointer', textAlign: 'left'
+    });
+    const roleOptions = ['super','client_admin','employee'].map(id => {
+      const a = id === role;
+      return { id, label: ROLE_META[id].label, short: ROLE_META[id].short, dot: ROLE_META[id].dot, active: a,
+        style: roleOptStyle(a), hover: a ? { background: 'var(--accent-weak)' } : { background: 'var(--surface-2)' },
+        onClick: () => this.setRole(id) };
+    });
+
+    const menuItemStyle = { display: 'flex', alignItems: 'center', gap: '11px', width: '100%', padding: '9px 10px', borderRadius: '10px', border: '1px solid transparent', background: 'transparent', cursor: 'pointer', fontSize: '13.5px', fontWeight: 500, color: 'var(--text)', whiteSpace: 'nowrap' };
+
+    const LABELS = { dashboard: 'Lead Dashboard', contacts: 'Contacts', opportunities: 'Opportunities', integrations: 'Integrations', staff: 'Staff', settings: 'Settings' };
+    const EYEBROWS = {
+      dashboard: 'Manage and track your pipeline',
+      contacts: 'Every lead across all your sources',
+      opportunities: 'Deals in motion',
+      integrations: 'Connected channels & data sources',
+      staff: 'Team & access control',
+      settings: 'Workspace preferences'
+    };
+    const ICON_OF = { dashboard: 'layout-dashboard', contacts: 'users', opportunities: 'trending-up', integrations: 'share-2', staff: 'shield', settings: 'sliders' };
+    const isDashboard = active === 'dashboard';
+    const isContacts = active === 'contacts';
+
+    // ===== dashboard data =====
+    const deltaPos = { color: 'var(--green)', fontWeight: 600 };
+    const deltaNeu = { color: 'var(--orange)', fontWeight: 600 };
+    const kpis = [
+      { label: 'Total leads', value: '1,248', delta: '+6.2%', sub: 'vs last 30 days', deltaStyle: deltaPos },
+      { label: 'New (30 days)', value: '312', delta: '+18', sub: 'this week', deltaStyle: deltaPos },
+      { label: 'Qualified', value: '84', delta: '27%', sub: 'of active leads', deltaStyle: deltaNeu },
+      { label: 'Won', value: '27', delta: '+4', sub: 'vs prev period', deltaStyle: deltaPos }
+    ];
+    const sources = [
+      { label: 'Meta Lead Form', pct: '42%', color: 'var(--orange)' },
+      { label: 'Click-to-WhatsApp', pct: '28%', color: 'var(--blue)' },
+      { label: 'Landing Page', pct: '30%', color: 'var(--surface-3)' }
+    ];
+    const activity = (this.state.contacts || []).slice(0, 5).map(c => ({
+      name: c.name, initials: this.initials(c.name), text: c.status + ' · ' + c.source, created: c.created
+    }));
+    // monthly bar chart
+    const monthVals = [62, 74, 58, 83, 71, 90, 68, 79, 96, 85, 100, 88];
+    const monthLabels = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const maxM = Math.max.apply(null, monthVals);
+    const months = monthVals.map((v, i) => {
+      const hot = v === maxM, h = Math.round(v * 1.45);
+      return {
+        label: monthLabels[i], hot, tip: String(Math.round(v * 3.12)),
+        barStyle: { width: '60%', maxWidth: '30px', height: h + 'px', borderRadius: '7px 7px 4px 4px', background: hot ? 'linear-gradient(180deg, var(--orange) 0%, color-mix(in srgb, var(--orange) 76%, #fff) 100%)' : 'var(--surface-2)' },
+        tipStyle: { position: 'absolute', left: '50%', bottom: (h + 11) + 'px', transform: 'translateX(-50%)', background: 'var(--ink)', color: '#fff', fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '7px', whiteSpace: 'nowrap', fontFamily: 'var(--mono)' }
+      };
+    });
+    // pipeline funnel
+    const stages = [
+      { label: 'New', count: '312', pct: 100, color: 'var(--blue)' },
+      { label: 'Contacted', count: '208', pct: 67, color: '#5BA7F2' },
+      { label: 'Qualified', count: '84', pct: 27, color: 'var(--orange)' },
+      { label: 'Won', count: '27', pct: 9, color: 'var(--green)' }
+    ].map(s => Object.assign({}, s, { fillStyle: { height: '100%', width: s.pct + '%', borderRadius: '99px', background: s.color } }));
+    // top campaigns
+    const campaigns = [
+      { name: 'hairtransplant_meta_jun26', leads: '128', pct: 100, color: 'var(--orange)' },
+      { name: 'interiordesign_ctwa_jun26', leads: '96', pct: 75, color: 'var(--blue)' },
+      { name: 'pilates_lp_jun26', leads: '54', pct: 42, color: 'var(--green)' },
+      { name: 'hairtransplant_lp_jun26', leads: '38', pct: 30, color: 'var(--border-strong)' }
+    ].map(c => Object.assign({}, c, { fillStyle: { height: '100%', width: c.pct + '%', borderRadius: '99px', background: c.color } }));
+
+    // ===== Contacts =====
+    const STATUS_META = {
+      New:       { fg: 'var(--st-new-fg)',       bg: 'var(--st-new-bg)' },
+      Contacted: { fg: 'var(--st-contacted-fg)', bg: 'var(--st-contacted-bg)' },
+      Qualified: { fg: 'var(--st-qualified-fg)', bg: 'var(--st-qualified-bg)' },
+      Won:       { fg: 'var(--st-won-fg)',       bg: 'var(--st-won-bg)' },
+      Lost:      { fg: 'var(--st-lost-fg)',      bg: 'var(--st-lost-bg)' }
+    };
+    const chip = (st) => ({ display: 'inline-flex', alignItems: 'center', height: '22px', padding: '0 9px', borderRadius: '999px', fontSize: '12px', fontWeight: 500, color: STATUS_META[st].fg, background: STATUS_META[st].bg, whiteSpace: 'nowrap' });
+    const COLS = '1.7fr 1.05fr 1.5fr 1.1fr .85fr .8fr';
+    const allC = this.state.contacts || [];
+    const q = (this.state.query || '').trim().toLowerCase();
+    const filtered = q ? allC.filter(c => (c.name + ' ' + c.email + ' ' + c.phone + ' ' + c.source).toLowerCase().includes(q)) : allC;
+    const selId = this.state.selectedId, detailOpen = this.state.drawer === 'detail';
+    const rows = filtered.map(c => {
+      const isSel = detailOpen && c.id === selId;
+      return {
+        id: c.id, name: c.name, initials: this.initials(c.name), phone: c.phone, email: c.email,
+        source: c.source, created: c.created, status: c.status, statusStyle: chip(c.status),
+        rowStyle: { display: 'grid', gridTemplateColumns: COLS, gap: '14px', alignItems: 'center', padding: '10px 18px', borderBottom: '1px solid var(--border)', cursor: 'pointer', background: isSel ? 'var(--accent-weak)' : 'transparent' },
+        rowHover: isSel ? { background: 'var(--accent-weak)' } : { background: 'var(--surface-2)' },
+        onClick: () => this.openDetail(c.id)
+      };
+    });
+    const sel = allC.find(c => c.id === selId) || null;
+    const dv = (mono) => ({ fontSize: '13px', color: 'var(--text)', wordBreak: 'break-word', fontFamily: mono ? 'var(--mono)' : 'var(--font)', fontVariantNumeric: 'tabular-nums' });
+    const detailRows = sel ? [
+      { k: 'Phone', v: sel.phone, vs: dv(true) },
+      { k: 'Email', v: sel.email, vs: dv(false) },
+      { k: 'Source', v: sel.source, vs: dv(false) },
+      { k: 'Created', v: sel.created, vs: dv(true) }
+    ] : [];
+    const track = sel ? this.makeTrack(sel) : {};
+    const trackRows = sel ? [
+      { k: 'fbclid', v: track.fbclid }, { k: 'fbp', v: track.fbp }, { k: 'fbc', v: track.fbc },
+      { k: 'ctwa_clid', v: track.ctwa_clid }, { k: 'utm_source', v: track.utm_source }, { k: 'utm_campaign', v: track.utm_campaign }
+    ] : [];
+    const fieldInput = { width: '100%', height: '42px', border: '1px solid var(--border)', borderRadius: '14px', background: 'var(--surface)', padding: '0 14px', fontSize: '14px', color: 'var(--text)', outline: 'none' };
+
+    return {
+      rootRef: this.rootRef,
+      collapsed,
+      showLabels: !collapsed,
+      asideStyle,
+      onToggleCollapse: () => this.setState(s => ({ collapsed: !s.collapsed })),
+      toggleIconEl: this.ic(collapsed ? 'chevrons-right' : 'chevrons-left', 18),
+
+      navItems,
+      pills,
+      onSettings: () => this.go('settings'),
+      settingsStyle: navBtn(settingsActive),
+      settingsHover: navHover(settingsActive),
+      settingsIconEl: this.ic('sliders', 20),
+      helpStyle: navBtn(false),
+      helpHover: navHover(false),
+      helpIconEl: this.ic('help-circle', 20),
+
+      onToggleUserMenu: () => this.setState(s => ({ userMenu: !s.userMenu })),
+      userMenuOpen: this.state.userMenu,
+
+      roleLabel: ROLE_META[role].label,
+      roleDot: ROLE_META[role].dot,
+      roleOptions,
+
+      userName: 'Jordan Reyes',
+      userEmail: 'jordan@quento.ai',
+      userInitials: 'JR',
+
+      icSearch: this.ic('search', 18),
+      icBell: this.ic('bell', 19),
+      icChevron: this.ic('chevron-down', 16),
+      icPlus: this.ic('plus', 16),
+      icCalendar: this.ic('calendar', 16),
+      icSliders: this.ic('sliders', 17),
+      icSlidersSm: this.ic('sliders', 16),
+      icLogout: this.ic('log-out', 16),
+      icBack: this.ic('arrow-left', 16),
+      checkEl: this.ic('check', 16),
+      activeIconEl: this.ic(ICON_OF[active] || 'layout-dashboard', 26),
+
+      iconBtnHover: { background: 'var(--surface-2)', color: 'var(--text)' },
+      inputFocus: { borderColor: 'var(--accent)', background: 'var(--surface)', boxShadow: '0 0 0 3px var(--accent-weak)' },
+      primaryHover: { background: 'var(--accent-strong)', borderColor: 'var(--accent-strong)' },
+      secondaryHover: { background: 'var(--surface-2)' },
+      menuItemStyle,
+      menuItemHover: { background: 'var(--surface-2)' },
+      menuItemDangerHover: { background: 'color-mix(in srgb, var(--danger) 9%, #fff)', color: 'var(--danger)' },
+
+      pageTitle: LABELS[active] || 'Dashboard',
+      pageEyebrow: EYEBROWS[active] || '',
+      isDashboard, isContacts,
+      isOther: !isDashboard && !isContacts,
+      onBackToDashboard: () => this.go('dashboard'),
+
+      kpis, sources, activity, months, stages, campaigns,
+
+      rows,
+      contactCount: allC.length,
+      query: this.state.query,
+      onQuery: (e) => this.setState({ query: e.target.value }),
+      noRows: rows.length === 0,
+      onNewContact: () => this.openCreate(),
+
+      drawerOpen: this.state.drawer !== null,
+      isCreate: this.state.drawer === 'create',
+      isDetail: this.state.drawer === 'detail',
+      onCloseDrawer: () => this.closeDrawer(),
+      icClose: this.ic('x', 18),
+      selectChevron: this.ic('chevron-down', 16),
+      icActivity: this.ic('activity', 16),
+
+      form: this.state.form,
+      onFormName: (e) => this.setField('name', e.target.value),
+      onFormPhone: (e) => this.setField('phone', e.target.value),
+      onFormEmail: (e) => this.setField('email', e.target.value),
+      onFormSource: (e) => this.setField('source', e.target.value),
+      onFormStatus: (e) => this.setField('status', e.target.value),
+      onSave: () => this.saveContact(),
+      fieldLabel: { fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', display: 'block' },
+      fieldInput,
+      selectStyle: Object.assign({}, fieldInput, { appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none', paddingRight: '38px', cursor: 'pointer' }),
+      saveStyle: Object.assign({ height: '44px', padding: '0 18px', borderRadius: '999px', border: '1px solid var(--accent)', background: 'var(--accent)', color: 'var(--on-accent)', fontSize: '14px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '8px' }, this.state.form.name.trim() ? { cursor: 'pointer' } : { opacity: .5, cursor: 'not-allowed', pointerEvents: 'none' }),
+
+      selName: sel ? sel.name : '',
+      selInitials: sel ? this.initials(sel.name) : '',
+      selSource: sel ? sel.source : '',
+      selStatus: sel ? sel.status : '',
+      selStatusStyle: sel ? chip(sel.status) : {},
+      detailRows, trackRows,
+      trackingOpen: this.state.trackingOpen,
+      onToggleTracking: () => this.setState(s => ({ trackingOpen: !s.trackingOpen })),
+      trackChevStyle: { display: 'inline-flex', color: 'var(--text-subtle)', transition: 'transform .15s', transform: this.state.trackingOpen ? 'rotate(180deg)' : 'none' }
+    };
+  }
+}
+</script>
+</body>
+</html>
